@@ -10,7 +10,7 @@ import de.westnordost.streetcomplete.osm.Tags
 
 class LGBTQTransgenderSpecializationQuest : OsmFilterQuestType<LGBTQTransgenderSpecialization>() {
     override val elementFilter = """
-        nodes, ways with lgbtq = primary and !(lgbtq:trans)
+        nodes, ways with lgbtq ~ primary|only and !(lgbtq:trans)
         and !memorial and !historic
     """
 

@@ -8,7 +8,7 @@ import de.westnordost.streetcomplete.osm.Tags
 
 class LGBTQGenderSpecializationQuest : OsmFilterQuestType<LGBTQGenderSpecialization>() {
     override val elementFilter = """
-        nodes with lgbtq = primary and !(lgbtq:men or lgbtq:woman or lgbtq:non_binary)
+        nodes with lgbtq ~ primary|only and !(lgbtq:men or lgbtq:woman or lgbtq:non_binary)
         and !memorial and !historic
     """
 
@@ -33,13 +33,13 @@ class LGBTQGenderSpecializationQuest : OsmFilterQuestType<LGBTQGenderSpecializat
                 tags["lgbtq:non_binary"] = "welcome"
             }
             LGBTQGenderSpecialization.MEN -> {
-                tags["lgbtq:men"] = "primary"
+                tags["lgbtq:men"] = tags["lgbtq"] ?: "primary"
             }
             LGBTQGenderSpecialization.WOMAN -> {
-                tags["lgbtq:woman"] = "primary"
+                tags["lgbtq:woman"] = tags["lgbtq"] ?: "primary"
             }
             LGBTQGenderSpecialization.NON_BINARY -> {
-                tags["lgbtq:non_binary"] = "primary"
+                tags["lgbtq:non_binary"] = tags["lgbtq"] ?: "primary"
             }
         }
 }
