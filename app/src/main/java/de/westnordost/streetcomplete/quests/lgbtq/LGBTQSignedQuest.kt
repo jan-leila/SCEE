@@ -13,8 +13,8 @@ class LGBTQSignedQuest : OsmFilterQuestType<Boolean>() {
     override val elementFilter = """
         nodes, ways with (
           amenity ~ swingerclub|nightclub|bar|pub|cafe|restaurant|place_of_worship|community_centre|library|doctors|social_facility
-          or (shop ~ erotic|books)
-          or (leisure ~ sauna|nightclub|nightlife)
+          or shop ~ erotic|books
+          or leisure ~ sauna|nightclub|nightlife
         )
         and (!seasonal or seasonal = no)
         and !brand and !wikipedia:brand and !wikidata:brand
