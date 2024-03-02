@@ -7,9 +7,9 @@ import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement
 import de.westnordost.streetcomplete.osm.Tags
 
 class LGBTQGenderSpecializationQuest : OsmFilterQuestType<LGBTQGenderSpecialization>() {
-    // TODO: filter out monuments
     override val elementFilter = """
         nodes with lgbtq = primary and !(lgbtq:men or lgbtq:woman or lgbtq:non_binary)
+        and !memorial and !historic
     """
 
     // countries that are listed here ban lgbtq people

@@ -11,6 +11,7 @@ import de.westnordost.streetcomplete.osm.Tags
 class LGBTQTransgenderSpecializationQuest : OsmFilterQuestType<LGBTQTransgenderSpecialization>() {
     override val elementFilter = """
         nodes, ways with lgbtq = primary and !(lgbtq:trans)
+        and !memorial and !historic
     """
 
     // countries that are listed here ban lgbtq people

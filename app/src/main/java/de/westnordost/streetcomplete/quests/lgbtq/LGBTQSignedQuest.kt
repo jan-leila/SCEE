@@ -18,6 +18,7 @@ class LGBTQSignedQuest : OsmFilterQuestType<Boolean>() {
         )
         and (!seasonal or seasonal = no)
         and !brand and !wikipedia:brand and !wikidata:brand
+        and !memorial and !historic
         and !lgbtq:signed
     """
 
