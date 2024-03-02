@@ -116,6 +116,10 @@ import de.westnordost.streetcomplete.quests.kerb_height.AddKerbHeight
 import de.westnordost.streetcomplete.quests.lanes.AddLanes
 import de.westnordost.streetcomplete.quests.leaf_detail.AddForestLeafType
 import de.westnordost.streetcomplete.quests.level.AddLevel
+import de.westnordost.streetcomplete.quests.lgbtq.LGBTQAccessQuest
+import de.westnordost.streetcomplete.quests.lgbtq.LGBTQGenderSpecializationQuest
+import de.westnordost.streetcomplete.quests.lgbtq.LGBTQSignedQuest
+import de.westnordost.streetcomplete.quests.lgbtq.LGBTQTransgenderSpecializationQuest
 import de.westnordost.streetcomplete.quests.map.AddMapSize
 import de.westnordost.streetcomplete.quests.map.AddMapType
 import de.westnordost.streetcomplete.quests.max_height.AddMaxHeight
@@ -544,6 +548,7 @@ fun getQuestTypeList(
     126 to AddVegan(),
     127 to AddHalal(), // there are ~ 100 times more Muslims than Jews
     128 to AddKosher(),
+
     129 to AddWheelchairAccessBusiness(), // used by wheelmap, OsmAnd, Organic Maps
     130 to AddInternetAccess(), // used by OsmAnd
     131 to AddAcceptsCards(), // this will often involve going inside and near the till
@@ -624,6 +629,10 @@ fun getQuestTypeList(
     EE_QUEST_OFFSET + 40 to AddPisteLit(),
     EE_QUEST_OFFSET + 35 to AddPisteRef(),
     EE_QUEST_OFFSET + 36 to AddPisteDifficulty(),
+    EE_QUEST_OFFSET + 45 to LGBTQSignedQuest(),
+    EE_QUEST_OFFSET + 46 to LGBTQAccessQuest(),
+    EE_QUEST_OFFSET + 47 to LGBTQGenderSpecializationQuest(),
+    EE_QUEST_OFFSET + 48 to LGBTQTransgenderSpecializationQuest(),
     EE_QUEST_OFFSET + 10 to OsmoseQuest(osmoseDao),
     EE_QUEST_OFFSET + 11 to CustomQuest(customQuestList),
     // POI quests
