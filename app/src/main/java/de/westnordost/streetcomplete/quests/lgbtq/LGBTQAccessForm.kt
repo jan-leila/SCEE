@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.quests.lgbtq
 
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.quest.OsmQuestKey
 import de.westnordost.streetcomplete.quests.AImageListQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
 
@@ -25,7 +26,8 @@ class LGBTQAccessForm : AImageListQuestForm<LGTBQAccess, LGBTQAccessAnswer>() {
     override fun onClickOk(selectedItems: List<LGTBQAccess>) {
         val value = selectedItems.single()
         if (value.osmValue == null) {
-            tempHideQuest()
+            hideOsmQuestController.tempHide(questKey as OsmQuestKey)
+            return
         }
         applyAnswer(LGBTQAccessAnswer(value))
     }
