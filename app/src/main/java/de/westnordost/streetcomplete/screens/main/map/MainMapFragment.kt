@@ -1,10 +1,10 @@
 package de.westnordost.streetcomplete.screens.main.map
 
-import android.content.SharedPreferences
 import android.graphics.PointF
 import android.graphics.RectF
 import androidx.annotation.DrawableRes
 import com.mapzen.tangram.geometry.Polyline
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesSource
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.data.edithistory.EditHistorySource
@@ -47,7 +47,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
     private val visibleQuestsSource: VisibleQuestsSource by inject()
     private val editHistorySource: EditHistorySource by inject()
     private val mapDataSource: MapDataWithEditsSource by inject()
-    private val prefs: SharedPreferences by inject()
+    private val prefs: ObservableSettings by inject()
     private val selectedOverlaySource: SelectedOverlaySource by inject()
     private val downloadedTilesSource: DownloadedTilesSource by inject()
     private val levelFilter: LevelFilter by inject()
@@ -222,7 +222,7 @@ class MainMapFragment : LocationAwareMapFragment(), ShowsGeometryMarkers {
 
         val clickPos = controller?.screenPositionToLatLon(PointF(x, y)) ?: return
 
-        val fingerRadius = context.dpToPx(CLICK_AREA_SIZE_IN_DP) / 2
+        val fingerRadius = context.resources.dpToPx(CLICK_AREA_SIZE_IN_DP) / 2
         val fingerEdgeClickPos = controller?.screenPositionToLatLon(PointF(x + fingerRadius, y)) ?: return
         val fingerRadiusInMeters = clickPos.distanceTo(fingerEdgeClickPos)
 

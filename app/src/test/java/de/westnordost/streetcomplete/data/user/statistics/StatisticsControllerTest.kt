@@ -1,13 +1,11 @@
 package de.westnordost.streetcomplete.data.user.statistics
 
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.countryboundaries.CountryBoundaries
 import de.westnordost.streetcomplete.Prefs
-import de.westnordost.streetcomplete.data.user.UserLoginStatusSource
-import de.westnordost.streetcomplete.testutils.any
 import de.westnordost.streetcomplete.testutils.mock
 import de.westnordost.streetcomplete.testutils.on
 import de.westnordost.streetcomplete.testutils.p
-import de.westnordost.streetcomplete.util.prefs.Preferences
 import kotlinx.datetime.LocalDate
 import org.mockito.ArgumentMatchers.anyDouble
 import org.mockito.Mockito.verify
@@ -23,10 +21,7 @@ class StatisticsControllerTest {
     private lateinit var currentWeekCountryStatisticsDao: CountryStatisticsDao
     private lateinit var activeDatesDao: ActiveDatesDao
     private lateinit var countryBoundaries: CountryBoundaries
-    private lateinit var prefs: Preferences
-    private lateinit var loginStatusSource: UserLoginStatusSource
-    private lateinit var loginStatusListener: UserLoginStatusSource.Listener
-
+    private lateinit var prefs: ObservableSettings
     private lateinit var statisticsController: StatisticsController
     private lateinit var listener: StatisticsSource.Listener
 
@@ -42,18 +37,12 @@ class StatisticsControllerTest {
         countryBoundaries = mock()
         prefs = mock()
         listener = mock()
-        loginStatusSource = mock()
-
-        on(loginStatusSource.addListener(any())).then { invocation ->
-            loginStatusListener = invocation.getArgument(0)
-            Unit
-        }
 
         statisticsController = StatisticsController(
             editTypeStatisticsDao, countryStatisticsDao,
             currentWeekEditTypeStatisticsDao, currentWeekCountryStatisticsDao,
             activeDatesDao,
-            lazyOf(countryBoundaries), prefs, loginStatusSource
+            lazyOf(countryBoundaries), prefs
         )
         statisticsController.addListener(listener)
     }
@@ -115,8 +104,7 @@ class StatisticsControllerTest {
     }
 
     @Test fun `clear all`() {
-        loginStatusListener.onLoggedOut()
-
+        statisticsController.clear()
         verify(editTypeStatisticsDao).clear()
         verify(countryStatisticsDao).clear()
         verify(currentWeekCountryStatisticsDao).clear()

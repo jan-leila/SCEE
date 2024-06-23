@@ -21,8 +21,11 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
+import com.russhwolf.settings.ObservableSettings
+import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.StreetCompleteApplication
 import de.westnordost.streetcomplete.data.Cleaner
 import de.westnordost.streetcomplete.data.ConflictAlgorithm
 import de.westnordost.streetcomplete.data.Database
@@ -49,7 +52,6 @@ import de.westnordost.streetcomplete.util.getFakeCustomOverlays
 import de.westnordost.streetcomplete.util.ktx.toast
 import de.westnordost.streetcomplete.util.logs.DatabaseLogger
 import de.westnordost.streetcomplete.util.logs.Log
-import de.westnordost.streetcomplete.util.prefs.Preferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -67,8 +69,8 @@ class DataManagementSettingsFragment :
     HasTitle,
     SharedPreferences.OnSharedPreferenceChangeListener {
 
-    private val prefs get() = preferenceManager.sharedPreferences!!
-    private val scPrefs: Preferences by inject()
+    private val prefs = StreetCompleteApplication.preferences
+    private val scPrefs: ObservableSettings by inject()
     private val db: Database by inject()
     private val visibleQuestTypeController: VisibleQuestTypeController by inject()
     private val cleaner: Cleaner by inject()
@@ -83,6 +85,9 @@ class DataManagementSettingsFragment :
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         PreferenceManager.setDefaultValues(requireContext(), R.xml.preferences_ee_data_management, false)
         addPreferencesFromResource(R.xml.preferences_ee_data_management)
+
+        if (!BuildConfig.DEBUG && !prefs.getBoolean(Prefs.TEMP_LOGGER, false))
+            findPreference<Preference>("temp_logger")?.isVisible = false
 
         fun importExport(import: Boolean) {
             val lists = listOf(
@@ -183,7 +188,7 @@ class DataManagementSettingsFragment :
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
         when (key) {
-            Prefs.DATA_RETAIN_TIME -> { lifecycleScope.launch(Dispatchers.IO) { cleaner.clean() } }
+            Prefs.DATA_RETAIN_TIME -> { lifecycleScope.launch(Dispatchers.IO) { cleaner.cleanOld() } }
             Prefs.PREFER_EXTERNAL_SD -> { moveMapTilesToCurrentLocation() }
             Prefs.TEMP_LOGGER -> { if (prefs.getBoolean(Prefs.TEMP_LOGGER, false)) {
                 Log.instances.removeAll { it is DatabaseLogger }
@@ -813,7 +818,7 @@ private const val REQUEST_CODE_TREES_EXPORT = 5332
 private const val REQUEST_CODE_CUSTOM_QUEST_IMPORT = 5333
 private const val REQUEST_CODE_CUSTOM_QUEST_EXPORT = 5334
 
-public const val LAST_KNOWN_DB_VERSION = 14L
+const val LAST_KNOWN_DB_VERSION = 17L
 
 private const val BACKUP_HIDDEN_OSM_QUESTS = "quests"
 private const val BACKUP_HIDDEN_NOTES = "notes"

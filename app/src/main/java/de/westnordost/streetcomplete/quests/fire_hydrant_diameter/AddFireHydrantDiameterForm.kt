@@ -8,6 +8,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isGone
 import androidx.core.widget.doAfterTextChanged
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
@@ -138,6 +139,7 @@ class AddFireHydrantDiameterForm : AbstractOsmQuestForm<FireHydrantDiameterAnswe
 
 private fun getHydrantDiameterSignLayoutResId(countryCode: String): Int = when (countryCode) {
     "DE", "BE", "LU", "AT" -> R.layout.quest_fire_hydrant_diameter_sign_de
+    "HU" -> R.layout.quest_fire_hydrant_diameter_sign_hu
     "FI" -> R.layout.quest_fire_hydrant_diameter_sign_fi
     "NL" -> R.layout.quest_fire_hydrant_diameter_sign_nl
     "PL" -> R.layout.quest_fire_hydrant_diameter_sign_pl

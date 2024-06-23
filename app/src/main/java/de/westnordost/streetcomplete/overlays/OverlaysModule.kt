@@ -1,6 +1,6 @@
 package de.westnordost.streetcomplete.overlays
 
-import android.content.SharedPreferences
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.countryboundaries.CountryBoundaries
 import de.westnordost.streetcomplete.ApplicationConstants.EE_QUEST_OFFSET
 import de.westnordost.osmfeatures.Feature
@@ -15,8 +15,8 @@ import de.westnordost.streetcomplete.overlays.custom.CustomOverlay
 import de.westnordost.streetcomplete.overlays.address.AddressOverlay
 import de.westnordost.streetcomplete.overlays.buildings.BuildingsOverlay
 import de.westnordost.streetcomplete.overlays.cycleway.CyclewayOverlay
+import de.westnordost.streetcomplete.overlays.places.PlacesOverlay
 import de.westnordost.streetcomplete.overlays.restriction.RestrictionOverlay
-import de.westnordost.streetcomplete.overlays.shops.ShopsOverlay
 import de.westnordost.streetcomplete.overlays.sidewalk.SidewalkOverlay
 import de.westnordost.streetcomplete.overlays.street_parking.StreetParkingOverlay
 import de.westnordost.streetcomplete.overlays.surface.SurfaceOverlay
@@ -53,7 +53,7 @@ fun overlaysRegistry(
     getCountryInfoByLocation: (LatLon) -> CountryInfo,
     getCountryCodeByLocation: (LatLon) -> String?,
     getFeature: (Element) -> Feature?,
-    prefs: SharedPreferences,
+    prefs: ObservableSettings,
 ) = OverlayRegistry(listOf(
 
     0 to WayLitOverlay(),
@@ -62,7 +62,7 @@ fun overlaysRegistry(
     5 to CyclewayOverlay(getCountryInfoByLocation),
     2 to StreetParkingOverlay(),
     3 to AddressOverlay(getCountryCodeByLocation),
-    4 to ShopsOverlay(getFeature),
+    4 to PlacesOverlay(getFeature),
     8 to ThingsOverlay(getFeature),
     7 to BuildingsOverlay(),
     (EE_QUEST_OFFSET + 1) to RestrictionOverlay(),

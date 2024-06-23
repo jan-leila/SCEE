@@ -1,12 +1,15 @@
 package de.westnordost.streetcomplete.quests
 
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.annotation.AnyThread
 import androidx.core.os.bundleOf
 import androidx.core.view.isGone
+import androidx.core.view.size
 import androidx.core.widget.NestedScrollView
 import androidx.viewbinding.ViewBinding
 import de.westnordost.countryboundaries.CountryBoundaries
@@ -59,8 +62,8 @@ abstract class AbstractQuestForm :
     override val bottomSheetContent get() = binding.speechbubbleContentContainer
     override val floatingBottomView get() = binding.okButtonContainer
     override val floatingBottomView2 get() = binding.hideButton
-    override val backButton get() = binding.closeButton
     protected val scrollView: NestedScrollView get() = binding.scrollView
+    override val hideButtonBottomMarginDp get() = if (binding.buttonPanel.size > 3) 32 else 8
 
     private var startedOnce = false
 
@@ -90,6 +93,8 @@ abstract class AbstractQuestForm :
     private var initialMapRotation = 0f
     private var initialMapTilt = 0f
 
+    private var infoIsExpanded: Boolean = false
+
     // overridable by child classes
     open val contentLayoutResId: Int? = null
     open val contentPadding = true
@@ -117,6 +122,8 @@ abstract class AbstractQuestForm :
 
         setTitle(resources.getString(questType.title))
         setTitleHintLabel(null)
+        setHint(questType.hint?.let { resources.getString(it) })
+        setHintImages(questType.hintImages.mapNotNull { requireContext().getDrawable(it) })
 
         binding.okButton.setOnClickListener {
             if (!isFormComplete()) {
@@ -125,6 +132,10 @@ abstract class AbstractQuestForm :
                 onClickOk()
             }
         }
+
+        infoIsExpanded = false
+        binding.infoButton.setOnClickListener { toggleInfoArea() }
+        binding.infoArea.setOnClickListener { toggleInfoArea() }
 
         // no content? -> hide the content container
         if (binding.content.childCount == 0) {
@@ -156,6 +167,38 @@ abstract class AbstractQuestForm :
     protected fun setTitleHintLabel(text: CharSequence?) {
         binding.titleHintLabel.isGone = text == null
         binding.titleHintLabel.text = text
+    }
+
+    protected fun setHint(text: CharSequence?) {
+        binding.infoText.isGone = text == null
+        binding.infoText.text = text
+        updateInfoButtonVisibility()
+    }
+
+    protected fun setHintImages(images: List<Drawable>) {
+        binding.infoPictures.isGone = images.isEmpty()
+        binding.infoPictures.removeAllViews()
+        for (image in images) {
+            val imageView = ImageView(requireContext())
+            imageView.setImageDrawable(image)
+            imageView.scaleType
+            binding.infoPictures.addView(imageView)
+        }
+        updateInfoButtonVisibility()
+    }
+
+    private fun toggleInfoArea() {
+        infoIsExpanded = !infoIsExpanded
+        binding.infoButton.setImageResource(
+            if (infoIsExpanded) R.drawable.ic_info_filled_24dp
+            else R.drawable.ic_info_outline_24dp
+        )
+        binding.infoButton.isActivated = infoIsExpanded
+        binding.infoArea.isGone = !infoIsExpanded
+    }
+
+    private fun updateInfoButtonVisibility() {
+        binding.infoButton.isGone = binding.infoText.isGone && binding.infoPictures.isGone
     }
 
     /** Inflate given layout resource id into the content view and return the inflated view */

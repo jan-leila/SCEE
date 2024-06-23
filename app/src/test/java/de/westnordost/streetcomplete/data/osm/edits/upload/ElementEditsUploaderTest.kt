@@ -1,5 +1,6 @@
 package de.westnordost.streetcomplete.data.osm.edits.upload
 
+import de.westnordost.streetcomplete.data.ConflictException
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
@@ -8,14 +9,13 @@ import de.westnordost.streetcomplete.data.osm.mapdata.MapDataApi
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataController
 import de.westnordost.streetcomplete.data.osm.mapdata.MapDataUpdates
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsController
-import de.westnordost.streetcomplete.data.upload.ConflictException
 import de.westnordost.streetcomplete.data.upload.OnUploadedChangeListener
 import de.westnordost.streetcomplete.data.user.statistics.StatisticsController
 import de.westnordost.streetcomplete.testutils.any
 import de.westnordost.streetcomplete.testutils.edit
 import de.westnordost.streetcomplete.testutils.eq
 import de.westnordost.streetcomplete.testutils.mock
-import de.westnordost.streetcomplete.testutils.mockPrefs
+import de.westnordost.streetcomplete.testutils.mockPrefs2
 import de.westnordost.streetcomplete.testutils.node
 import de.westnordost.streetcomplete.testutils.on
 import kotlinx.coroutines.cancelAndJoin
@@ -49,7 +49,7 @@ class ElementEditsUploaderTest {
 
         listener = mock()
 
-        uploader = ElementEditsUploader(elementEditsController, noteEditsController, mapDataController, singleUploader, mapDataApi, statisticsController, mock(), mock(), mockPrefs())
+        uploader = ElementEditsUploader(elementEditsController, noteEditsController, mapDataController, singleUploader, mapDataApi, statisticsController, mock(), mock(), mockPrefs2())
         uploader.uploadedChangeListener = listener
     }
 

@@ -1,22 +1,12 @@
 package de.westnordost.streetcomplete.data.user
 
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.osmapi.user.UserDetails
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.util.Listeners
-import de.westnordost.streetcomplete.util.prefs.Preferences
 
 /** Controller that handles user login, logout, auth and updated data */
-class UserDataController(
-    private val prefs: Preferences,
-    private val userLoginStatusSource: UserLoginStatusSource
-) : UserDataSource {
-
-    private val userLoginStatusListener = object : UserLoginStatusSource.Listener {
-        override fun onLoggedIn() {}
-        override fun onLoggedOut() {
-            clear()
-        }
-    }
+class UserDataController(private val prefs: ObservableSettings) : UserDataSource {
 
     private val listeners = Listeners<UserDataSource.Listener>()
 
@@ -30,10 +20,6 @@ class UserDataController(
             listeners.forEach { it.onUpdated() }
         }
 
-    init {
-        userLoginStatusSource.addListener(userLoginStatusListener)
-    }
-
     fun setDetails(userDetails: UserDetails) {
         prefs.putLong(Prefs.OSM_USER_ID, userDetails.id)
         prefs.putString(Prefs.OSM_USER_NAME, userDetails.displayName)
@@ -41,7 +27,7 @@ class UserDataController(
         listeners.forEach { it.onUpdated() }
     }
 
-    private fun clear() {
+    fun clear() {
         prefs.remove(Prefs.OSM_USER_ID)
         prefs.remove(Prefs.OSM_USER_NAME)
         prefs.remove(Prefs.OSM_UNREAD_MESSAGES)

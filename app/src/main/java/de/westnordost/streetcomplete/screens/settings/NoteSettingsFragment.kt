@@ -2,7 +2,6 @@ package de.westnordost.streetcomplete.screens.settings
 
 import android.app.Activity
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
@@ -13,11 +12,16 @@ import androidx.appcompat.app.AlertDialog
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestController
+import de.westnordost.streetcomplete.data.osmnotes.notequests.getRawBlockList
 import de.westnordost.streetcomplete.screens.HasTitle
 import de.westnordost.streetcomplete.util.dialogs.setDefaultDialogPadding
 import de.westnordost.streetcomplete.util.ktx.toast
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import java.io.File
 import java.io.FileInputStream
@@ -27,7 +31,7 @@ import java.util.zip.ZipOutputStream
 
 class NoteSettingsFragment : PreferenceFragmentCompat(), HasTitle {
 
-    private val prefs: SharedPreferences by inject()
+    private val prefs: ObservableSettings by inject()
 
     override val title: String get() = getString(R.string.pref_screen_notes)
 
@@ -35,9 +39,10 @@ class NoteSettingsFragment : PreferenceFragmentCompat(), HasTitle {
         PreferenceManager.setDefaultValues(requireContext(), R.xml.preferences_ee_notes, false)
         addPreferencesFromResource(R.xml.preferences_ee_notes)
 
-        findPreference<Preference>("hide_notes_by")?.setOnPreferenceClickListener {
+        findPreference<Preference>("hide_notes_by2")?.setOnPreferenceClickListener {
             val text = EditText(context)
-            text.setText(prefs.getStringSet(Prefs.HIDE_NOTES_BY_USERS, emptySet())?.joinToString(","))
+            val blockList: List<String> = getRawBlockList(prefs)
+            text.setText(blockList.joinToString(", "))
             text.setHint(R.string.pref_hide_notes_hint)
             text.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
 
@@ -50,8 +55,9 @@ class NoteSettingsFragment : PreferenceFragmentCompat(), HasTitle {
                 .setTitle(R.string.pref_hide_notes_message)
                 .setView(layout)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
-                    val content = text.text.split(",").map { it.trim().lowercase() }.toSet()
-                    prefs.edit().putStringSet(Prefs.HIDE_NOTES_BY_USERS, content).apply()
+                    val content = text.text.split(",").map { it.trim().lowercase() }
+                    prefs.putString(Prefs.HIDE_NOTES_BY_USERS, Json.encodeToString(content))
+                    OsmQuestController.reloadQuestTypes()
                 }
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()

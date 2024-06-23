@@ -3,7 +3,6 @@ package de.westnordost.streetcomplete.util
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.util.TypedValue
 import android.view.ViewGroup
 import android.widget.CheckBox
@@ -16,9 +15,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.widget.doAfterTextChanged
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
@@ -31,7 +30,6 @@ import de.westnordost.streetcomplete.overlays.custom.getCustomOverlayIndices
 import de.westnordost.streetcomplete.overlays.custom.getIndexedCustomOverlayPref
 import de.westnordost.streetcomplete.util.dialogs.setViewWithDefaultPadding
 import de.westnordost.streetcomplete.util.ktx.dpToPx
-import de.westnordost.streetcomplete.util.prefs.Preferences
 import de.westnordost.streetcomplete.view.ArrayImageAdapter
 
 @SuppressLint("SetTextI18n") // this is about element type, don't want translation here
@@ -39,13 +37,13 @@ import de.westnordost.streetcomplete.view.ArrayImageAdapter
 fun showOverlayCustomizer(
     index: Int,
     ctx: Context,
-    prefs: Preferences,
+    prefs: ObservableSettings,
     questTypeRegistry: QuestTypeRegistry,
     onChanged: (Boolean) -> Unit, // true if overlay is currently set custom overlay
     onDeleted: (Boolean) -> Unit, // true if overlay was currently set custom overlay
 ) {
     var d: AlertDialog? = null
-    val padding = ctx.dpToPx(4).toInt()
+    val padding = ctx.resources.dpToPx(4).toInt()
 
 
     val title = EditText(ctx).apply {
@@ -62,8 +60,8 @@ fun showOverlayCustomizer(
             getIndexedCustomOverlayPref(
                 Prefs.CUSTOM_OVERLAY_IDX_ICON, index), "ic_custom_overlay"), "drawable", ctx.packageName)
         setSelection(iconList.indexOf(selectedIcon))
-        dropDownWidth = ctx.dpToPx(48).toInt()
-        layoutParams = ViewGroup.LayoutParams(ctx.dpToPx(100).toInt(), ctx.dpToPx(48).toInt())
+        dropDownWidth = ctx.resources.dpToPx(48).toInt()
+        layoutParams = ViewGroup.LayoutParams(ctx.resources.dpToPx(100).toInt(), ctx.resources.dpToPx(48).toInt())
     }
     val filterText = TextView(ctx).apply {
         text = "${ctx.getString(R.string.custom_overlay_filter_info)} ℹ️"
@@ -84,7 +82,7 @@ fun showOverlayCustomizer(
             dialog.show()
         }
     }
-    val overlayFilter = prefs.getString(getIndexedCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_FILTER, index), "")?.split(" with ")?.takeIf { it.size == 2 }
+    val overlayFilter = prefs.getString(getIndexedCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_FILTER, index), "").split(" with ").takeIf { it.size == 2 }
     val tag = EditText(ctx).apply {
         setHint(R.string.element_selection_button)
         setText(overlayFilter?.get(1) ?: "")
@@ -139,7 +137,7 @@ fun showOverlayCustomizer(
     }
     val color = EditText(ctx).apply {
         setHint(R.string.custom_overlay_color_hint)
-        setText(prefs.getString(getIndexedCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_COLOR_KEY, index), "")!!)
+        setText(prefs.getString(getIndexedCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_COLOR_KEY, index), ""))
         doAfterTextChanged {text ->
             if (text == null || text.count { it == '(' } != text.count { it == ')' }) {
                 d?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
@@ -161,7 +159,7 @@ fun showOverlayCustomizer(
     }
     val dashFilter = EditText(ctx).apply {
         setHint(R.string.custom_overlay_dash_filter_hint)
-        setText(prefs.getString(getIndexedCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_DASH_FILTER, index), "")!!)
+        setText(prefs.getString(getIndexedCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_DASH_FILTER, index), ""))
         doAfterTextChanged { text ->
             if (text.isNullOrBlank()) {
                 d?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = true
@@ -243,9 +241,9 @@ fun showOverlayCustomizer(
 // title is invalid resId 0
 // name and wikiLink are the overlay index as stored in shared preferences
 // changesetComment is the overlay title
-fun getFakeCustomOverlays(prefs: Preferences, ctx: Context, onlyIfExpertMode: Boolean = true): List<Overlay> {
+fun getFakeCustomOverlays(prefs: ObservableSettings, ctx: Context, onlyIfExpertMode: Boolean = true): List<Overlay> {
     if (onlyIfExpertMode && !prefs.getBoolean(Prefs.EXPERT_MODE, false)) return emptyList()
-    return prefs.getString(Prefs.CUSTOM_OVERLAY_INDICES, "0")!!.split(",").mapNotNull { index ->
+    return prefs.getString(Prefs.CUSTOM_OVERLAY_INDICES, "0").split(",").mapNotNull { index ->
         val i = index.toIntOrNull() ?: return@mapNotNull null
         object : Overlay {
             override fun getStyledElements(mapData: MapDataWithGeometry) = emptySequence<Pair<Element, Style>>()

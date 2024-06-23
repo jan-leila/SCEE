@@ -82,7 +82,8 @@ class EditHistoryController(
         externalSourceQuestController.addHideListener(externalSourceQuestHiddenListener)
     }
 
-    fun undo(edit: Edit): Boolean {
+    fun undo(editKey: EditKey): Boolean {
+        val edit = get(editKey) ?: return false
         if (!edit.isUndoable) return false
         return when (edit) {
             is ElementEdit -> elementEditsController.undo(edit)
@@ -127,11 +128,6 @@ class EditHistoryController(
             else -> null
         }
     }
-
-    override fun getMostRecentUndoable(): Edit? =
-        // this could be optimized later by not querying all. Though, the amount that is queried
-        // from database should never be that big anyway...
-        getAll().firstOrNull { it.isUndoable }
 
     // difference to upstream: may contain older hidden quests
     // but that really doesn't matter

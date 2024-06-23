@@ -6,6 +6,7 @@ import android.view.View
 import androidx.core.view.isGone
 import androidx.recyclerview.widget.GridLayoutManager
 import de.westnordost.streetcomplete.Prefs
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.databinding.QuestGenericListBinding
 import de.westnordost.streetcomplete.util.LastPickedValuesStore
@@ -109,13 +110,12 @@ abstract class AImageListQuestForm<I, T> : AbstractOsmQuestForm<T>() {
 
     override fun isFormComplete() = imageSelector.selectedIndices.isNotEmpty()
 
-    private fun moveFavouritesToFront(originalList: List<DisplayItem<I>>): List<DisplayItem<I>> {
-        return if (originalList.size > prefs.getInt(Prefs.FAVS_FIRST_MIN_LINES, 1) * itemsPerRow && moveFavoritesToFront) {
+    private fun moveFavouritesToFront(originalList: List<DisplayItem<I>>): List<DisplayItem<I>> =
+        if (originalList.size > prefs.getInt(Prefs.FAVS_FIRST_MIN_LINES, 1) * itemsPerRow && moveFavoritesToFront) {
             favs.get().filterNotNull().padWith(originalList).toList()
         } else {
             originalList
         }
-    }
 
     companion object {
         private const val SELECTED_INDICES = "selected_indices"

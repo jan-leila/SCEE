@@ -24,9 +24,13 @@
         Be aware that by enabling expert mode you bear significantly more responsibility for your edits.\n
         Please only enable this setting if you have OSM experience outside StreetComplete and understand what you are doing.
     </string>
+    <!-- no need ot translate, debug only -->
     <string name="pref_read_log_title">Log reader</string>
+    <!-- no need ot translate, debug only -->
     <string name="pref_read_log_save">Save full log to file</string>
+    <!-- no need ot translate, debug only -->
     <string name="pref_read_reverse_button">Reverse</string>
+    <!-- no need ot translate, debug only -->
     <string name="pref_read_filter_hint">Filter…</string>
 
     <!-- notes settings -->
@@ -64,6 +68,7 @@
     <string name="pref_gpx_track_loading_error">Error loading GPX track file</string>
     <string name="pref_gpx_track_enable">Display GPX track</string>
     <string name="pref_gpx_track_download">Download area covered by GPX track</string>
+    <!-- pref_gpx_track_download_too_big is currently not used, no need to translate (may get deleted later) -->
     <string name="pref_gpx_track_download_too_big">Download area too big, please download manually</string>
 
     <!-- ui settings -->
@@ -554,7 +559,14 @@
     <string name="quest_guidepostRef_hint">Reference number of this map or guidepost, not the reference number of signed routes.</string>
     <string name="quest_guidepostName_hint">Signed (location) name of this map or guidepost. Do not enter a reference number here.</string>
     <string name="quest_guidepost_disabled_msg">This quest is disabled by default because what is signed strongly varies by region and operator. You may need to refine the element selection for your area (e.g. add or remove maps, only select elements with hiking=yes, etc.)</string>
+    <!-- maxheight_answer_noSign strings removed in SC, could take existing translations from https://github.com/streetcomplete/StreetComplete/blob/312dd4135ad75beff9f13c446040d1c3afbc9a80/app/src/main/res/values/strings.xml -->
+    <string name="quest_maxheight_answer_noSign_question">Is there easily enough space for even the tallest trucks (at least about 4.5 meters / 15 feet) to pass through?</string>
+    <string name="quest_maxheight_answer_noSign_question_yes">Tall trucks can pass through</string>
+    <string name="quest_maxheight_answer_noSign_question_no">"Tall trucks don’t fit"</string>
+    <string name="quest_maxheight_answer_noSign_question_unclear">"Unclear"</string>
 
+    <string name="quest_generalRef_hint">Reference number or code</string>
+    <string name="quest_generalRef_disabled_msg">This quest is disabled by default because what is signed strongly varies by region and operator. You may need to refine the element selection for your area (e.g. remove street lamps, add maps, only select guideposts with hiking=yes, etc.)</string>
 
     <!-- piste difficulty -->
     <string name="quest_piste_difficulty_title">What is the difficulty of this piste?</string>
@@ -566,6 +578,15 @@
     <string name="quest_piste_difficulty_freeride">Freeride</string>
     <string name="quest_piste_difficulty_extreme">Extreme</string>
 
+    <!-- parking capacity quests -->
+    <string name="quest_parking_capacity_title">How many cars can park here?</string>
+    <string name="quest_parking_capacity_hint">This also includes special spaces like for disabled people, families, for charging etc. Hide the quest if the parking spaces are not marked and thus not countable</string>
+    <string name="quest_parking_capacity_disabled_title">How many parking spaces for disabled people are here?</string>
+    <string name="quest_parking_capacity_disabled_answer_yes">There are, but unclear count</string>
+    <string name="quest_parking_capacity_disabled_default_disabled_msg">Quests added in SCEE are always disabled by default, as they may not always be answerable, and may require knowledge of the topic and tagging.\nThis quest will not be asked if capacity:disabled=yes is set. If you want to specify them as well, change the element selection from \"and !capacity:disabled\" to \"and (!capacity:disabled or capacity:disabled=yes)\"</string>
+
+    <!-- parking orientation quest -->
+    <string name="quest_parking_orientation_title">In what orientation do cars park here?</string>
 
     <!-- new overlays -->
 
@@ -614,7 +635,8 @@ This especially applies to the possibility of editing raw tags and deleting node
 Quests added in SCEE <i>may not be answerable</i> in all cases and are disabled by default. Please hide them in case you can’t answer them, and <i>do not spam notes</i>.\n\n
 Out of the box SCEE is configured to behave very similar to StreetComplete.</string>
     <string name="fork_about_title_repository">SCEE project home</string>
-    <string name="ban_check_fails">Check for banned versions keeps failing. You might run an outdated version, please consider upgrading.</string>
+<!-- ban_check_fails is currently unused, translating it would be a waste of time if it's not put to use again
+    <string name="ban_check_fails">Check for banned versions keeps failing. You might run an outdated version, please consider upgrading.</string>-->
     <string name="enqueue_download">Start after current search is done</string>
     <string name="create_poi">Add POI</string>
     <string name="insert_node">Insert node into way</string>
@@ -646,5 +668,7 @@ Out of the box SCEE is configured to behave very similar to StreetComplete.</str
     <string name="access_time_limit">Time</string>
     <string name="create_relation_action_description">You created a relation with …</string>
     <string name="outside_downloaded_area_warning">This position is outside the downloaded area. Continue?</string>
+    <!-- actually there are still SC translations available, as only the main string has been removed from SC. -->
+    <string name="close">Close</string>
 
 </resources>

@@ -7,25 +7,21 @@ import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AlertDialog
-import androidx.core.view.isGone
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED
 import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.quests.TagEditor
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.updateMargins
-import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
-import de.westnordost.streetcomplete.util.prefs.Preferences
 import de.westnordost.streetcomplete.view.RoundRectOutlineProvider
 import de.westnordost.streetcomplete.view.SlidingRelativeLayout
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 import kotlin.math.min
 
@@ -41,7 +37,7 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
     protected abstract val bottomSheetContainer: SlidingRelativeLayout
     protected abstract val bottomSheet: ViewGroup
     protected abstract val scrollViewChild: View
-    protected val prefs: Preferences by inject()
+    protected val prefs: ObservableSettings by inject()
 
     /** Title view of the bottom sheet. Tapping on it expands / retracts the bottom sheet */
     protected abstract val bottomSheetTitle: View?
@@ -51,17 +47,9 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
     /** View that floats at the bottom on top of any retracted/expanded bottom sheet */
     protected abstract val floatingBottomView: View?
     protected abstract val floatingBottomView2: View?
-    /** View that is only shown when the bottom sheet is expanded and acts like a back-button */
-    protected abstract val backButton: View?
+    open val hideButtonBottomMarginDp = 8
 
     private lateinit var bottomSheetBehavior: BottomSheetBehavior<*>
-    private val bottomSheetCallback = object : BottomSheetBehavior.BottomSheetCallback() {
-        override fun onStateChanged(bottomSheet: View, newState: Int) {}
-
-        override fun onSlide(bottomSheet: View, slideOffset: Float) {
-            updateCloseButtonVisibility()
-        }
-    }
 
     private var minBottomInset = Int.MAX_VALUE
 
@@ -71,22 +59,12 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        bottomSheet.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            viewLifecycleScope.launch {
-                // not immediately because this is called during layout change (view.getTop() == 0)
-                delay(1)
-                updateCloseButtonVisibility()
-            }
-        }
-
-        backButton?.setOnClickListener { activity?.onBackPressed() }
-
         minBottomInset = Int.MAX_VALUE
         view.respectSystemInsets {
             scrollViewChild.updatePadding(bottom = it.bottom)
             bottomSheetContainer.updateMargins(top = it.top, left = it.left, right = it.right)
             floatingBottomView?.updateMargins(bottom = it.bottom)
-            floatingBottomView2?.updateMargins(bottom = it.bottom + context.dpToPx(8).toInt())
+            floatingBottomView2?.updateMargins(bottom = it.bottom + context.resources.dpToPx(hideButtonBottomMarginDp).toInt())
 
             // expanding bottom sheet when keyboard is opened
             if (minBottomInset < it.bottom) expand()
@@ -116,8 +94,6 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
             }
         }
 
-        bottomSheetBehavior.addBottomSheetCallback(bottomSheetCallback)
-
         if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE || defaultExpanded) {
             expand()
         }
@@ -143,23 +119,12 @@ abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet 
         bottomSheetContainer.updateLayoutParams { width = resources.getDimensionPixelSize(R.dimen.quest_form_width) }
     }
 
-    override fun onDestroyView() {
-        super.onDestroyView()
-        bottomSheetBehavior.removeBottomSheetCallback(bottomSheetCallback)
-    }
-
     fun expand() {
         bottomSheetBehavior.state = STATE_EXPANDED
     }
 
-    private fun updateCloseButtonVisibility() {
-        backButton?.isGone = (bottomSheet.top) > 0
-    }
-
     @UiThread
-    override fun onClickMapAt(position: LatLon, clickAreaSizeInMeters: Double): Boolean {
-        return false
-    }
+    override fun onClickMapAt(position: LatLon, clickAreaSizeInMeters: Double): Boolean = false
 
     /** Request to close the form through user interaction (back button, clicked other quest,..),
      * requires user confirmation if any changes have been made  */

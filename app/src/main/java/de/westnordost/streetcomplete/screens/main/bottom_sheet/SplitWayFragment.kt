@@ -2,7 +2,6 @@ package de.westnordost.streetcomplete.screens.main.bottom_sheet
 
 import android.animation.AnimatorInflater
 import android.annotation.SuppressLint
-import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.graphics.PointF
 import android.graphics.drawable.Animatable
@@ -13,17 +12,16 @@ import android.view.animation.AnimationUtils
 import android.widget.RelativeLayout
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.edit
 import androidx.core.os.bundleOf
 import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
+import de.westnordost.streetcomplete.data.AllEditTypes
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
-import de.westnordost.streetcomplete.data.location.checkIsSurvey
-import de.westnordost.streetcomplete.data.location.confirmIsSurvey
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditType
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsController
 import de.westnordost.streetcomplete.data.osm.edits.split_way.SplitAtLinePosition
@@ -35,9 +33,6 @@ import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.Way
-import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
-import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
-import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.databinding.FragmentSplitWayBinding
 import de.westnordost.streetcomplete.overlays.IsShowingElement
 import de.westnordost.streetcomplete.screens.main.map.ShowsGeometryMarkers
@@ -53,6 +48,8 @@ import de.westnordost.streetcomplete.util.math.crossTrackDistanceTo
 import de.westnordost.streetcomplete.util.math.distanceTo
 import de.westnordost.streetcomplete.util.viewBinding
 import de.westnordost.streetcomplete.view.RoundRectOutlineProvider
+import de.westnordost.streetcomplete.view.checkIsSurvey
+import de.westnordost.streetcomplete.view.confirmIsSurvey
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -73,11 +70,11 @@ class SplitWayFragment :
     private val binding by viewBinding(FragmentSplitWayBinding::bind)
 
     private val elementEditsController: ElementEditsController by inject()
-    private val questTypeRegistry: QuestTypeRegistry by inject()
-    private val overlayRegistry: OverlayRegistry by inject()
+
+    private val allEditTypes: AllEditTypes by inject()
     private val soundFx: SoundFx by inject()
     private val recentLocationStore: RecentLocationStore by inject()
-    private val prefs: SharedPreferences by inject()
+    private val prefs: ObservableSettings by inject()
 
     override val elementKey: ElementKey by lazy { way.key }
 
@@ -106,8 +103,7 @@ class SplitWayFragment :
         super.onCreate(savedInstanceState)
         val args = requireArguments()
         way = Json.decodeFromString(args.getString(ARG_WAY)!!)
-        editType = questTypeRegistry.getByName(args.getString(ARG_QUESTTYPE)!!) as? OsmElementQuestType<*>
-            ?: overlayRegistry.getByName(args.getString(ARG_QUESTTYPE)!!)!!
+        editType = allEditTypes.getByName(args.getString(ARG_QUESTTYPE)!!) as ElementEditType
         geometry = Json.decodeFromString(args.getString(ARG_GEOMETRY)!!)
     }
 
@@ -197,7 +193,7 @@ class SplitWayFragment :
     }
 
     private fun toggleBackground() {
-        prefs.edit { putString(Prefs.THEME_BACKGROUND, if (prefs.getString(Prefs.THEME_BACKGROUND, "MAP") == "MAP") "AERIAL" else "MAP") }
+        prefs.putString(Prefs.THEME_BACKGROUND, if (prefs.getString(Prefs.THEME_BACKGROUND, "MAP") == "MAP") "AERIAL" else "MAP")
         updateMapButtonText()
     }
 
@@ -209,7 +205,7 @@ class SplitWayFragment :
 
     private fun restoreBackground() {
         if (prefs.getString(Prefs.THEME_BACKGROUND, "MAP") != initialMap)
-            prefs.edit { putString(Prefs.THEME_BACKGROUND, initialMap) }
+            prefs.putString(Prefs.THEME_BACKGROUND, initialMap)
     }
 
     @UiThread

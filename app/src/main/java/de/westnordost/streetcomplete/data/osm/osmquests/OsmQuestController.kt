@@ -1,6 +1,6 @@
 package de.westnordost.streetcomplete.data.osm.osmquests
 
-import android.content.SharedPreferences
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.countryboundaries.CountryBoundaries
 import de.westnordost.streetcomplete.ApplicationConstants
 import de.westnordost.streetcomplete.Prefs
@@ -56,7 +56,7 @@ class OsmQuestController internal constructor(
     private val notesSource: NotesWithEditsSource,
     private val questTypeRegistry: QuestTypeRegistry,
     private val countryBoundaries: Lazy<CountryBoundaries>,
-    private val prefs: SharedPreferences,
+    private val prefs: ObservableSettings,
 ) : OsmQuestSource, OsmQuestsHiddenController, OsmQuestsHiddenSource {
 
     /* Must be a singleton because there is a listener that should respond to a change in the
@@ -487,7 +487,7 @@ class OsmQuestController internal constructor(
  *  all have to wait for that one thread. So, better enqueue the expensive work at the beginning. */
 private val OsmElementQuestType<*>.chonkerIndex: Int get() = when (this) {
     is AddOpeningHours -> 0 // OpeningHoursParser, extensive filter
-    is AddSuspectedOneway -> 0 // Download, IO TODO
+    is AddSuspectedOneway -> 0 // Download, IO
     is CheckExistence -> 1 // FeatureDictionary, extensive filter
     is AddHousenumber -> 1 // complex filter
     is AddCycleway -> 2 // complex filter

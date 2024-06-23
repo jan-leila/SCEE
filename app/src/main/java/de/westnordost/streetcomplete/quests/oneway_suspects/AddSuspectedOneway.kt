@@ -15,6 +15,8 @@ import de.westnordost.streetcomplete.quests.oneway_suspects.data.TrafficFlowSegm
 import de.westnordost.streetcomplete.quests.oneway_suspects.data.TrafficFlowSegmentsApi
 import de.westnordost.streetcomplete.quests.oneway_suspects.data.WayTrafficFlowDao
 import de.westnordost.streetcomplete.util.logs.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlin.math.hypot
 
 class AddSuspectedOneway(
@@ -41,6 +43,8 @@ class AddSuspectedOneway(
     override val hasMarkersAtEnds = true
     override val achievements = listOf(CAR)
 
+    override val hint = R.string.quest_arrow_tutorial
+
     override fun getTitle(tags: Map<String, String>) = R.string.quest_oneway_title
 
     override fun getApplicableElements(mapData: MapDataWithGeometry): Iterable<Element> {
@@ -51,9 +55,8 @@ class AddSuspectedOneway(
             return mapData.filter { element -> filter.matches(element) && db.isForward(element.id) != null }
         }
 
-        val trafficDirectionMap: Map<Long, List<TrafficFlowSegment>>
-        try {
-            trafficDirectionMap = trafficFlowSegmentsApi.get(bbox)
+        val trafficDirectionMap = try {
+            runBlocking(Dispatchers.IO) { trafficFlowSegmentsApi.get(bbox) }
         } catch (e: Exception) {
             Log.e("AddSuspectedOneway", "Unable to download traffic metadata", e)
             return emptyList()

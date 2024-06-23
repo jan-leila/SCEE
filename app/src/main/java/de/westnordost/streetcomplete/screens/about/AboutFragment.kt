@@ -107,7 +107,7 @@ class AboutFragment : TwoPaneListFragment(), HasTitle {
                 .show()
         } else {
             AlertDialog.Builder(ctx)
-                .setMessage(R.string.about_description_donate_google_play2)
+                .setMessage(R.string.about_description_donate_google_play3)
                 .show()
         }
     }
@@ -123,7 +123,7 @@ class AboutFragment : TwoPaneListFragment(), HasTitle {
                 binding.imageView.setImageResource(with.iconId)
                 binding.textView.text = with.title
                 binding.root.setOnClickListener { openUri(with.url) }
-                TextViewCompat.setTextAppearance(binding.textView, R.style.TextAppearance_Title)
+                TextViewCompat.setTextAppearance(binding.textView, R.style.TextAppearance_TitleLarge)
             }
         }
     }
@@ -134,7 +134,8 @@ private enum class DonationPlatform(
     @DrawableRes val iconId: Int,
     val url: String
 ) {
-    GITHUB("GitHub Sponsors", R.drawable.ic_github, "https://github.com/sponsors/westnordost"),
-    LIBERAPAY("Liberapay", R.drawable.ic_liberapay, "https://liberapay.com/westnordost"),
-    PATREON("Patreon", R.drawable.ic_patreon, "https://patreon.com/westnordost")
+    LIBERAPAY2("Liberapay (Helium314)", R.drawable.ic_liberapay, "https://liberapay.com/helium314"),
+    GITHUB("GitHub Sponsors (westnordost)", R.drawable.ic_github, "https://github.com/sponsors/westnordost"),
+    LIBERAPAY("Liberapay (westnordost)", R.drawable.ic_liberapay, "https://liberapay.com/westnordost"),
+    PATREON("Patreon (westnordost)", R.drawable.ic_patreon, "https://patreon.com/westnordost")
 }

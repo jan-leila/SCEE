@@ -2,7 +2,7 @@ package de.westnordost.streetcomplete.quests
 
 import android.annotation.SuppressLint
 import android.app.ActionBar.LayoutParams
-import android.content.SharedPreferences
+import android.graphics.Paint
 import android.icu.text.DateFormat
 import android.os.Build
 import android.os.Bundle
@@ -23,6 +23,7 @@ import androidx.core.view.size
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.commit
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.osmfeatures.GeometryType
 import de.westnordost.streetcomplete.Prefs
@@ -39,10 +40,7 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuest
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestController
 import de.westnordost.streetcomplete.data.externalsource.ExternalSourceQuestController
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
-import de.westnordost.streetcomplete.data.location.checkIsSurvey
-import de.westnordost.streetcomplete.data.location.confirmIsSurvey
 import de.westnordost.streetcomplete.data.osm.edits.update_tags.createChanges
-import de.westnordost.streetcomplete.data.osm.geometry.ElementPointGeometry
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
 import de.westnordost.streetcomplete.data.quest.ExternalSourceQuestKey
@@ -54,17 +52,20 @@ import de.westnordost.streetcomplete.overlays.custom.CustomOverlayForm
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.InsertNodeTagEditor
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsCloseableBottomSheet
 import de.westnordost.streetcomplete.util.EditTagsAdapter
-import de.westnordost.streetcomplete.util.getLocalesForFeatureDictionary
+import de.westnordost.streetcomplete.util.getLanguagesForFeatureDictionary
 import de.westnordost.streetcomplete.util.ktx.copy
 import de.westnordost.streetcomplete.util.ktx.geometryType
 import de.westnordost.streetcomplete.util.ktx.hideKeyboard
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
+import de.westnordost.streetcomplete.util.ktx.openUri
 import de.westnordost.streetcomplete.util.ktx.popIn
 import de.westnordost.streetcomplete.util.ktx.popOut
 import de.westnordost.streetcomplete.util.ktx.showKeyboard
 import de.westnordost.streetcomplete.util.ktx.updateMargins
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
+import de.westnordost.streetcomplete.view.checkIsSurvey
+import de.westnordost.streetcomplete.view.confirmIsSurvey
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -97,7 +98,7 @@ open class TagEditor : Fragment(), IsCloseableBottomSheet {
     private var minBottomInset = Int.MAX_VALUE
 
     private val osmQuestController: OsmQuestController by inject()
-    protected val prefs: SharedPreferences by inject()
+    protected val prefs: ObservableSettings by inject()
     protected val elementEditsController: ElementEditsController by inject()
     private val featureDictionary: Lazy<FeatureDictionary> by inject(named("FeatureDictionaryLazy"))
     protected val mapDataSource: MapDataWithEditsSource by inject()
@@ -190,6 +191,19 @@ open class TagEditor : Fragment(), IsCloseableBottomSheet {
             date.toString()
         binding.elementInfo.text = resources.getString(R.string.tag_editor_last_edited, dateText)
         binding.elementInfo.layoutParams.height = LayoutParams.WRAP_CONTENT
+        if (element.id > 0) {
+            binding.elementInfo.setTextColor(ContextCompat.getColor(requireContext(), R.color.link))
+            binding.elementInfo.paintFlags = binding.elementInfo.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+            binding.elementInfo.setOnClickListener {
+                val url = "https://www.openstreetmap.org/${element.type.name.lowercase()}/${element.id}/history"
+                AlertDialog.Builder(requireContext())
+                    .setTitle(R.string.open_url)
+                    .setMessage(url)
+                    .setPositiveButton(android.R.string.ok) { _, _ -> openUri(url) }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            }
+        }
 
         // fill recyclerview and quests view
         binding.editTags.layoutManager = LinearLayoutManager(requireContext())
@@ -246,11 +260,11 @@ open class TagEditor : Fragment(), IsCloseableBottomSheet {
 
         if (element.id == 0L) {
             val previousTagsForFeature: Map<String, String>? = try { featureDictionary.value
-                .byTags(newTags)
-                .isSuggestion(false)
-                .forLocale(*getLocalesForFeatureDictionary(resources.configuration))
-                .find()
-                .firstOrNull()
+                .getByTags(
+                    tags = newTags,
+                    isSuggestion = false,
+                    languages = getLanguagesForFeatureDictionary(resources.configuration)
+                ).firstOrNull()
                 ?.let { prefs.getString(Prefs.CREATE_NODE_LAST_TAGS_FOR_FEATURE + it, "") }
                 ?.let { Json.decodeFromString(it) }
             } catch (e: Exception) { null }

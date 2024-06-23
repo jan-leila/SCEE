@@ -1,7 +1,6 @@
 package de.westnordost.streetcomplete.overlays
 
 import android.app.DatePickerDialog
-import android.content.SharedPreferences
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.PointF
@@ -22,14 +21,13 @@ import androidx.core.view.isInvisible
 import androidx.core.view.updateLayoutParams
 import androidx.fragment.app.Fragment
 import androidx.viewbinding.ViewBinding
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.countryboundaries.CountryBoundaries
 import de.westnordost.osmfeatures.FeatureDictionary
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.location.RecentLocationStore
-import de.westnordost.streetcomplete.data.location.checkIsSurvey
-import de.westnordost.streetcomplete.data.location.confirmIsSurvey
 import de.westnordost.streetcomplete.data.meta.CountryInfo
 import de.westnordost.streetcomplete.data.meta.CountryInfos
 import de.westnordost.streetcomplete.data.meta.getByLocation
@@ -81,6 +79,8 @@ import de.westnordost.streetcomplete.view.ResText
 import de.westnordost.streetcomplete.view.RoundRectOutlineProvider
 import de.westnordost.streetcomplete.view.Text
 import de.westnordost.streetcomplete.view.add
+import de.westnordost.streetcomplete.view.checkIsSurvey
+import de.westnordost.streetcomplete.view.confirmIsSurvey
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -109,7 +109,7 @@ abstract class AbstractOverlayForm :
     private val recentLocationStore: RecentLocationStore by inject()
     private val featureDictionaryLazy: Lazy<FeatureDictionary> by inject(named("FeatureDictionaryLazy"))
     protected val featureDictionary: FeatureDictionary get() = featureDictionaryLazy.value
-    private val prefs: SharedPreferences by inject()
+    private val prefs: ObservableSettings by inject()
     private var _countryInfo: CountryInfo? = null // lazy but resettable because based on lateinit var
         get() {
             if (field == null) {
@@ -283,9 +283,7 @@ abstract class AbstractOverlayForm :
 
     /* --------------------------------- IsCloseableBottomSheet  ------------------------------- */
 
-    @UiThread override fun onClickMapAt(position: LatLon, clickAreaSizeInMeters: Double): Boolean {
-        return false
-    }
+    @UiThread override fun onClickMapAt(position: LatLon, clickAreaSizeInMeters: Double): Boolean = false
 
     /** Request to close the form through user interaction (back button, clicked other quest,..),
      * requires user confirmation if any changes have been made  */

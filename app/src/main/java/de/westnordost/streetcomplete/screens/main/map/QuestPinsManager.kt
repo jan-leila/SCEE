@@ -1,10 +1,10 @@
 package de.westnordost.streetcomplete.screens.main.map
 
-import android.content.SharedPreferences
 import android.content.res.Resources
 import android.graphics.RectF
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.data.download.tiles.TilesRect
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
@@ -23,7 +23,7 @@ import de.westnordost.streetcomplete.data.quest.QuestType
 import de.westnordost.streetcomplete.data.quest.QuestTypeRegistry
 import de.westnordost.streetcomplete.data.quest.VisibleQuestsSource
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderSource
-import de.westnordost.streetcomplete.overlays.shops.ShopsOverlay
+import de.westnordost.streetcomplete.overlays.places.PlacesOverlay
 import de.westnordost.streetcomplete.quests.show_poi.ShowBusiness
 import de.westnordost.streetcomplete.screens.main.map.components.Pin
 import de.westnordost.streetcomplete.screens.main.map.components.PinsMapComponent
@@ -55,7 +55,7 @@ class QuestPinsManager(
     private val questTypeRegistry: QuestTypeRegistry,
     private val resources: Resources,
     private val visibleQuestsSource: VisibleQuestsSource,
-    private val prefs: SharedPreferences,
+    private val prefs: ObservableSettings,
     private val mapDataSource: MapDataWithEditsSource,
     private val selectedOverlaySource: SelectedOverlaySource,
 ) : DefaultLifecycleObserver {
@@ -232,7 +232,7 @@ class QuestPinsManager(
         val sortedQuestTypes = questTypeRegistry.toMutableList()
         questTypeOrderSource.sort(sortedQuestTypes)
         // move specific quest types to front if set by preference
-        val moveToFront = if (Prefs.DayNightBehavior.valueOf(prefs.getString(Prefs.DAY_NIGHT_BEHAVIOR, "IGNORE")!!) == Prefs.DayNightBehavior.PRIORITY)
+        val moveToFront = if (Prefs.DayNightBehavior.valueOf(prefs.getString(Prefs.DAY_NIGHT_BEHAVIOR, "IGNORE")) == Prefs.DayNightBehavior.PRIORITY)
             if (isDay(ctrl.cameraPosition.position))
                 sortedQuestTypes.filter { it.dayNightCycle == DayNightCycle.ONLY_DAY }
             else
@@ -270,7 +270,7 @@ class QuestPinsManager(
     }
 
     private fun getLabel(quest: OsmQuest): String? {
-        if (quest.type is ShowBusiness && selectedOverlaySource.selectedOverlay is ShopsOverlay)
+        if (quest.type is ShowBusiness && selectedOverlaySource.selectedOverlay is PlacesOverlay)
             return null // avoid duplicate business labels if shops overlay is active
         val labelSources = quest.type.dotLabelSources.ifEmpty { return null }
         val tags = mapDataSource.get(quest.elementType, quest.elementId)?.tags ?: return null
@@ -283,11 +283,12 @@ class QuestPinsManager(
     private fun getQuestImportance(quest: Quest): Int = synchronized(questTypeOrders) {
         val questTypeOrder = questTypeOrders[quest.type] ?: 0
         val freeValuesForEachQuest = 100000 / questTypeOrders.size
-        /* position is used to add values unique to each quest to make ordering consistent
-           freeValuesForEachQuest is an int, so % freeValuesForEachQuest will fit into int
-           note that quest.position.hashCode() can be negative and hopefullyUniqueValueForQuest
-           should be positive to ensure that it will not change quest order
-           */
+        /*
+            position is used to add values unique to each quest to make ordering consistent
+            freeValuesForEachQuest is an int, so % freeValuesForEachQuest will fit into int
+            note that quest.position.hashCode() can be negative and hopefullyUniqueValueForQuest
+            should be positive to ensure that it will not change quest order
+         */
         val hopefullyUniqueValueForQuest = (abs(quest.position.hashCode())) % freeValuesForEachQuest
         return 100000 - questTypeOrder * freeValuesForEachQuest + hopefullyUniqueValueForQuest
     }

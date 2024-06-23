@@ -1,7 +1,6 @@
 package de.westnordost.streetcomplete.view.dialogs
 
 import android.content.Context
-import android.content.SharedPreferences
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -13,6 +12,7 @@ import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.countryboundaries.CountryBoundaries
 import de.westnordost.osmfeatures.Feature
 import de.westnordost.osmfeatures.FeatureDictionary
@@ -24,7 +24,7 @@ import de.westnordost.streetcomplete.data.meta.getByLocation
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.databinding.ViewFeatureBinding
 import de.westnordost.streetcomplete.databinding.ViewSelectPresetBinding
-import de.westnordost.streetcomplete.util.getLocalesForFeatureDictionary
+import de.westnordost.streetcomplete.util.getLanguagesForFeatureDictionary
 import de.westnordost.streetcomplete.util.ktx.allExceptFirstAndLast
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.hideKeyboard
@@ -51,11 +51,11 @@ class SearchFeaturesDialog(
 ) : AlertDialog(context), KoinComponent {
 
     private val binding = ViewSelectPresetBinding.inflate(LayoutInflater.from(context))
-    private val locales = getLocalesForFeatureDictionary(context.resources.configuration)
+    private val languages = getLanguagesForFeatureDictionary(context.resources.configuration)
     private val adapter = FeaturesAdapter()
     private val countryInfos: CountryInfos by inject()
     private val countryBoundaries: Lazy<CountryBoundaries> by inject(named("CountryBoundariesLazy"))
-    private val prefs: SharedPreferences by inject()
+    private val prefs: ObservableSettings by inject()
 
     private val searchText: String? get() = binding.searchEditText.nonBlankTextOrNull
 
@@ -74,7 +74,7 @@ class SearchFeaturesDialog(
         if (prefs.getBoolean(Prefs.CREATE_NODE_SHOW_KEYBOARD, true) || text != null || codesOfDefaultFeatures.isEmpty())
             window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
 
-        val params = ViewGroup.LayoutParams(context.dpToPx(58).toInt(), context.dpToPx(58).toInt())
+        val params = ViewGroup.LayoutParams(context.resources.dpToPx(58).toInt(), context.resources.dpToPx(58).toInt())
         codesOfDefaultFeatures.forEach {
             val resId = iconOnlyFeatures[it] ?: return@forEach
             val feature = featureDictionary.byId(it).get() ?: return@forEach
@@ -93,46 +93,53 @@ class SearchFeaturesDialog(
         updateSearchResults()
     }
 
+    // todo: this could use some update after SC changes
     private fun getFeatures(startsWith: String): List<Feature> {
+        featureDictionary.getByTerm(
+            search = startsWith,
+            languages = languages,
+            country = countryOrSubdivisionCode,
+            geometry = geometryType,
+        ).filter(filterFn).take(50).toList()
         return if (prefs.getBoolean(Prefs.SEARCH_MORE_LANGUAGES, false)) {
             // even if there are many languages, UI stuff will likely be slower than the multiple searches
-            val otherLocales = locales.toList().allExceptFirstAndLast() + // first is default, last is null
+            val otherLocales = languages.toList().allExceptFirstAndLast() + // first is default, last is null
                 (pos?.let { p ->
                     val c = countryInfos.getByLocation(countryBoundaries.value, p.longitude, p.latitude)
-                    c.officialLanguages.map { Locale(it, c.countryCode) }
+                    c.officialLanguages.map { Locale(it, c.countryCode).toLanguageTag() }
                 } ?: emptyList())
-            (featureDictionary // get default results
-                .byTerm(startsWith)
-                .forGeometry(geometryType)
-                .inCountry(countryOrSubdivisionCode)
-                .forLocale(*locales)
-                .find() +
+            (featureDictionary.getByTerm( // get default results
+                    search = startsWith,
+                    languages = languages,
+                    country = countryOrSubdivisionCode,
+                    geometry = geometryType,
+                ).filter(filterFn).take(50).toList() +
                 otherLocales.toSet().flatMap {
                     if (it == null) return@flatMap emptyList()
-                    featureDictionary // plus results for each additional locale
-                        .byTerm(startsWith)
-                        .forGeometry(geometryType)
-                        .inCountry(countryOrSubdivisionCode)
-                        .forLocale(it)
-                        .find()
+                    featureDictionary.getByTerm( // plus results for each additional locale
+                        search = startsWith,
+                        languages = listOf(it),
+                        country = countryOrSubdivisionCode,
+                        geometry = geometryType,
+                    ).filter(filterFn).take(50).toList()
                 }).distinctBy { it.id }
         } else
-            featureDictionary
-                .byTerm(startsWith)
-                .forGeometry(geometryType)
-                .inCountry(countryOrSubdivisionCode)
-                .forLocale(*locales)
-                .find()
-                .filter(filterFn)
+            featureDictionary.getByTerm(
+                search = startsWith,
+                languages = languages,
+                country = countryOrSubdivisionCode,
+                geometry = geometryType,
+            ).filter(filterFn).take(50).toList()
     }
 
     private fun updateSearchResults() {
         val text = searchText
         val list = if (text == null) codesOfDefaultFeatures.filterNot { it in iconOnlyFeatures }.mapNotNull {
-            featureDictionary
-                .byId(it)
-                .forLocale(*locales)
-                .inCountry(countryOrSubdivisionCode).get()
+            featureDictionary.getById(
+                id = it,
+                languages = languages,
+                country = countryOrSubdivisionCode
+            )
         } else
             getFeatures(text)
         adapter.list = list.toMutableList()

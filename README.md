@@ -39,7 +39,7 @@ SCEE asks for two more permissions than StreetComplete: `ACCESS_BACKGROUND_LOCAT
   * Prevent short scroll to user location at app start when map was at a different position
   * Downloading data will interrupt upload queue (will resume afterwards)
   * Manual downloads can be queued instead of always cancelling the previous one
-  * Show all hidden quests on long press on undo button (works only for downloaded areas)
+  * Show all hidden quests on long press undo button (works only for downloaded areas)
   * Additional answers for some quests
     * Additional building types
     * Additional path surfaces
@@ -60,13 +60,24 @@ SCEE asks for two more permissions than StreetComplete: `ACCESS_BACKGROUND_LOCAT
   * Outdoor seating type
   * Service building type
   * Service building operator
+  * Street cabinet type
   * Artwork type
   * Railway platform number
+  * Subway entrance reference number
+  * Trail visibility of hiking trails
   * Genus / species of trees
     * Allows providing a file containing translated tree names instead of the default English ones
   * Color of building roofs
+  * Whether a barrier is locked
+  * Height of barriers
   * Whether pharmacy is dispensing prescription drugs
   * Destination of some road types after intersections
+  * Which beers are sold in restaurants
+  * Elevation, ref, sports and name of guideposts
+  * Width of footways
+  * Size and type of maps
+  * Via ferrata scale
+  * Difficulty and ref for pistes, and whether they are lit
   * Quests based on external sources
     * Osmose quest showing Osmose issues as quests, with filter options
     * Custom quest from CSV file, allows creating nodes (see in-app description)
@@ -102,6 +113,7 @@ SCEE asks for two more permissions than StreetComplete: `ACCESS_BACKGROUND_LOCAT
   * UI settings
     * Quick settings button for switching preset, background and reverse quest order. Also contains a level filter for displayed quests / overlay elements
     * Quick selector for overlays (on main screen)
+      * long-press custom overlays to edit
     * Show next quest for this element immediately
     * Show nearby quests / other quests for same element when quest form is open
     * Hide button for temporarily hiding quests (long press for permanent hide)
@@ -114,7 +126,7 @@ SCEE asks for two more permissions than StreetComplete: `ACCESS_BACKGROUND_LOCAT
     * Capitalize words when entering names
     * Zoom using volume buttons
   * Display settings
-    * Disable 3D buildings
+    * Disable 3D buildings (currently broken)
     * Show arrows indicating direction of highlighted way
     * Highlight geometries for nearby quests
     * Put pin on exact location of a quest
@@ -153,7 +165,7 @@ Database and preferences files are compatible with StreetComplete, so if you hav
 ## Contributing quests
 The original [contributing guidelines](README_StreetComplete.md#contributing) are still valid, but note that the [guidelines for contributing a quest](QUEST_GUIDELINES.md) have been significantly relaxed:
 * Creating, moving and deleting nodes is possible
-  * Inserting nodes into a way is not (yet) possible
+  * Inserting nodes into a way is possible
 * Guidelines are useful suggestions, but not enforced
 * Quests may be based on external sources like Osmose, not just on element selection
 

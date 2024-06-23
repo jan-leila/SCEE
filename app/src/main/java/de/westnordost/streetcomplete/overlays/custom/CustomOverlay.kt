@@ -1,6 +1,7 @@
 package de.westnordost.streetcomplete.overlays.custom
 
 import android.content.SharedPreferences
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.ElementFilterExpression
@@ -19,29 +20,27 @@ import de.westnordost.streetcomplete.overlays.Color
 import de.westnordost.streetcomplete.overlays.StrokeStyle
 import de.westnordost.streetcomplete.util.getNameLabel
 import de.westnordost.streetcomplete.util.ktx.isArea
-import de.westnordost.streetcomplete.util.prefs.Preferences
 
-class CustomOverlay(val prefs: SharedPreferences) : Overlay {
+class CustomOverlay(val prefs: ObservableSettings) : Overlay {
 
     override val title = R.string.custom_overlay_title
     override val icon = R.drawable.ic_custom_overlay
     override val changesetComment = "Edit user-defined element selection"
     override val wikiLink: String = "Tags"
-    override val isCreateNodeEnabled get() = prefs.getString(Prefs.CUSTOM_OVERLAY_IDX_FILTER, "")!!.startsWith("nodes")
+    override val isCreateNodeEnabled get() = prefs.getString(Prefs.CUSTOM_OVERLAY_IDX_FILTER, "").startsWith("nodes")
 
     override fun getStyledElements(mapData: MapDataWithGeometry): Sequence<Pair<Element, Style>> {
         val filter = try {
-            prefs.getString(getCurrentCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_FILTER, prefs), "")
-                ?.toElementFilterExpression() ?: return emptySequence()
+            prefs.getString(getCurrentCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_FILTER, prefs), "").toElementFilterExpression()
         } catch (e: ParseException) { return emptySequence() }
-        val colorKeyPref = prefs.getString(getCurrentCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_COLOR_KEY, prefs), "")!!.let {
+        val colorKeyPref = prefs.getString(getCurrentCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_COLOR_KEY, prefs), "").let {
             if (it.startsWith("!")) it.substringAfter("!")
             else it
         }
         val colorKeySelector = try { colorKeyPref.takeIf { it.isNotBlank() }?.toRegex() }
             catch (_: Exception) { null }
         val dashFilter = try {
-            val string = prefs.getString(getCurrentCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_DASH_FILTER, prefs), "")?.takeIf { it.isNotBlank() }
+            val string = prefs.getString(getCurrentCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_DASH_FILTER, prefs), "").takeIf { it.isNotBlank() }
             string?.let { "ways with $it".toElementFilterExpression() }
         } catch (_: Exception) { null }
         val missingColor = if (prefs.getBoolean(getCurrentCustomOverlayPref(Prefs.CUSTOM_OVERLAY_IDX_HIGHLIGHT_MISSING_DATA, prefs), true))
@@ -130,8 +129,8 @@ private fun createColorFromString(string: String): String {
 }
 
 fun getIndexedCustomOverlayPref(pref: String, index: Int) = pref.replace("idx", index.toString())
-fun getCurrentCustomOverlayPref(pref: String, prefs: SharedPreferences) = getIndexedCustomOverlayPref(pref, prefs.getInt(Prefs.CUSTOM_OVERLAY_SELECTED_INDEX, 0))
+fun getCurrentCustomOverlayPref(pref: String, prefs: ObservableSettings) = getIndexedCustomOverlayPref(pref, prefs.getInt(Prefs.CUSTOM_OVERLAY_SELECTED_INDEX, 0))
 fun getCustomOverlayIndices(prefs: SharedPreferences) = prefs.getString(Prefs.CUSTOM_OVERLAY_INDICES, "0")!!
     .split(",").mapNotNull { it.toIntOrNull() }
-fun getCustomOverlayIndices(prefs: Preferences) = prefs.getString(Prefs.CUSTOM_OVERLAY_INDICES, "0")
+fun getCustomOverlayIndices(prefs: ObservableSettings) = prefs.getString(Prefs.CUSTOM_OVERLAY_INDICES, "0")
     .split(",").mapNotNull { it.toIntOrNull() }

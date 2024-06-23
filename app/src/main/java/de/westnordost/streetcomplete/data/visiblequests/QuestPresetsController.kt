@@ -1,13 +1,13 @@
 package de.westnordost.streetcomplete.data.visiblequests
 
-import android.content.SharedPreferences
+import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.util.Listeners
 
 /** Controls the ids and names of quest presets */
 class QuestPresetsController(
     private val questPresetsDao: QuestPresetsDao,
     private val selectedQuestPresetStore: SelectedQuestPresetStore,
-    private val prefs: SharedPreferences,
+    private val prefs: ObservableSettings,
 ) : QuestPresetsSource {
 
     private val listeners = Listeners<QuestPresetsSource.Listener>()
@@ -28,9 +28,8 @@ class QuestPresetsController(
         return presetId
     }
 
-    override fun getName(presetId: Long): String? {
-        return questPresetsDao.getName(presetId)
-    }
+    override fun getName(presetId: Long): String? =
+        questPresetsDao.getName(presetId)
 
     fun rename(presetId: Long, name: String) {
         questPresetsDao.rename(presetId, name)
@@ -42,8 +41,8 @@ class QuestPresetsController(
             selectedId = 0
         }
         questPresetsDao.delete(presetId)
-        val presetSettings = prefs.all.keys.filter { it.startsWith("${presetId}_qs_") }
-        presetSettings.forEach { prefs.edit().remove(it).apply() }
+        val presetSettings = prefs.keys.filter { it.startsWith("${presetId}_qs_") }
+        presetSettings.forEach { prefs.remove(it) }
         onDeletedQuestPreset(presetId)
     }
 

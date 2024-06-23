@@ -34,7 +34,7 @@ fun LeftAndRightCycleway.wasNoOnewayForCyclistsButNowItIs(tags: Map<String, Stri
  *  is null because it is possible that the undefined side has a track in the contra-flow direction
  *  (e.g. either a normal track on the left side or a dual-track on the right side) */
 fun LeftAndRightCycleway.isNotOnewayForCyclistsNow(tags: Map<String, String>): Boolean? {
-    val onewayDir = when  {
+    val onewayDir = when {
         isForwardOneway(tags) -> FORWARD
         isReversedOneway(tags) -> BACKWARD
         else -> return true
@@ -113,9 +113,8 @@ enum class Cycleway {
     /** cyclists explicitly ought to share the sidewalk with pedestrians, i.e. the cycle track is
      *  not segregated from the sidewalk */
     SIDEWALK_EXPLICIT,
-    // the following not anymore, see #2276
     // no cycleway, but cyclists are allowed on sidewalk
-    // SIDEWALK_OK,
+    SIDEWALK_OK,
 
     /** no cycle track or lane */
     NONE,
@@ -190,6 +189,7 @@ fun getSelectableCycleways(
         PICTOGRAMS,
         BUSWAY,
         SIDEWALK_EXPLICIT,
+        SIDEWALK_OK,
         SHOULDER
     )
     val dualCycleways = listOf(

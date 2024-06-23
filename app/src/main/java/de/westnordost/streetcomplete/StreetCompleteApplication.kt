@@ -5,16 +5,20 @@ import android.app.ActivityManager.MemoryInfo
 import android.app.Application
 import android.content.ComponentCallbacks2
 import android.content.SharedPreferences
+import android.net.ConnectivityManager
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.getSystemService
 import androidx.preference.PreferenceManager
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import com.russhwolf.settings.ObservableSettings
+import com.russhwolf.settings.SettingsListener
 import de.westnordost.streetcomplete.data.CacheTrimmer
 import de.westnordost.streetcomplete.data.CleanerWorker
 import de.westnordost.streetcomplete.data.DatabaseInitializer
 import de.westnordost.streetcomplete.data.Preloader
+import de.westnordost.streetcomplete.data.allEditTypesModule
 import de.westnordost.streetcomplete.data.dbModule
 import de.westnordost.streetcomplete.data.download.downloadModule
 import de.westnordost.streetcomplete.data.download.tiles.DownloadedTilesController
@@ -35,10 +39,12 @@ import de.westnordost.streetcomplete.data.osmnotes.notequests.osmNoteQuestModule
 import de.westnordost.streetcomplete.data.osmnotes.notesModule
 import de.westnordost.streetcomplete.data.externalsource.externalSourceModule
 import de.westnordost.streetcomplete.data.overlays.overlayModule
+import de.westnordost.streetcomplete.data.platform.platformModule
 import de.westnordost.streetcomplete.data.quest.questModule
 import de.westnordost.streetcomplete.data.upload.uploadModule
 import de.westnordost.streetcomplete.data.urlconfig.urlConfigModule
-import de.westnordost.streetcomplete.data.user.UserLoginStatusController
+import de.westnordost.streetcomplete.data.user.UserLoginController
+import de.westnordost.streetcomplete.data.user.UserUpdater
 import de.westnordost.streetcomplete.data.user.achievements.achievementsModule
 import de.westnordost.streetcomplete.data.user.statistics.statisticsModule
 import de.westnordost.streetcomplete.data.user.userModule
@@ -46,6 +52,7 @@ import de.westnordost.streetcomplete.data.visiblequests.questPresetsModule
 import de.westnordost.streetcomplete.overlays.overlaysModule
 import de.westnordost.streetcomplete.quests.oneway_suspects.data.trafficFlowSegmentsModule
 import de.westnordost.streetcomplete.quests.questsModule
+import de.westnordost.streetcomplete.screens.about.aboutScreenModule
 import de.westnordost.streetcomplete.screens.main.mainModule
 import de.westnordost.streetcomplete.screens.main.map.mapModule
 import de.westnordost.streetcomplete.screens.measure.arModule
@@ -55,17 +62,15 @@ import de.westnordost.streetcomplete.screens.settings.ResurveyIntervalsUpdater
 import de.westnordost.streetcomplete.screens.settings.oldQuestNames
 import de.westnordost.streetcomplete.screens.settings.renameUpdatedQuests
 import de.westnordost.streetcomplete.screens.settings.settingsModule
+import de.westnordost.streetcomplete.screens.user.userScreenModule
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
 import de.westnordost.streetcomplete.util.TempLogger
 import de.westnordost.streetcomplete.util.getDefaultTheme
-import de.westnordost.streetcomplete.util.getSelectedLocale
-import de.westnordost.streetcomplete.util.getSystemLocales
-import de.westnordost.streetcomplete.util.ktx.addedToFront
+import de.westnordost.streetcomplete.util.getSelectedLocales
 import de.westnordost.streetcomplete.util.ktx.nowAsEpochMilliseconds
 import de.westnordost.streetcomplete.util.logs.AndroidLogger
 import de.westnordost.streetcomplete.util.logs.DatabaseLogger
 import de.westnordost.streetcomplete.util.logs.Log
-import de.westnordost.streetcomplete.util.prefs.Preferences
 import de.westnordost.streetcomplete.util.prefs.preferencesModule
 import de.westnordost.streetcomplete.util.setDefaultLocales
 import kotlinx.coroutines.CoroutineName
@@ -86,12 +91,15 @@ class StreetCompleteApplication : Application() {
     private val crashReportExceptionHandler: CrashReportExceptionHandler by inject()
     private val resurveyIntervalsUpdater: ResurveyIntervalsUpdater by inject()
     private val downloadedTilesController: DownloadedTilesController by inject()
-    private val prefs: Preferences by inject()
+    private val prefs: ObservableSettings by inject()
     private val editHistoryController: EditHistoryController by inject()
-    private val userLoginStatusController: UserLoginStatusController by inject()
+    private val userLoginController: UserLoginController by inject()
     private val cacheTrimmer: CacheTrimmer by inject()
+    private val userUpdater: UserUpdater by inject()
 
     private val applicationScope = CoroutineScope(SupervisorJob() + CoroutineName("Application"))
+
+    private val settingsListeners = mutableListOf<SettingsListener>()
 
     override fun onCreate() {
         super.onCreate()
@@ -108,6 +116,8 @@ class StreetCompleteApplication : Application() {
             modules(
                 achievementsModule,
                 appModule,
+                aboutScreenModule,
+                userScreenModule,
                 createdElementsModule,
                 dbModule,
                 logsModule,
@@ -129,6 +139,7 @@ class StreetCompleteApplication : Application() {
                 preferencesModule,
                 questModule,
                 questPresetsModule,
+                allEditTypesModule,
                 questsModule,
                 settingsModule,
                 statisticsModule,
@@ -139,6 +150,7 @@ class StreetCompleteApplication : Application() {
                 overlaysModule,
                 overlayModule,
                 urlConfigModule,
+                platformModule,
                 externalSourceModule,
             )
         }
@@ -150,18 +162,20 @@ class StreetCompleteApplication : Application() {
             preloader.preload()
         }
 
-        /* Force logout users who are logged in with OAuth 1.0a, they need to re-authenticate with OAuth 2 */
+        // Force logout users who are logged in with OAuth 1.0a, they need to re-authenticate with OAuth 2
         if (prefs.getStringOrNull(Prefs.OAUTH1_ACCESS_TOKEN) != null) {
-            userLoginStatusController.logOut()
+            userLoginController.logOut()
         }
 
-        setDefaultLocales()
+        updateDefaultLocales()
 
         crashReportExceptionHandler.install()
 
+        if (isConnected) userUpdater.update()
+
         enqueuePeriodicCleanupWork()
 
-        setDefaultTheme()
+        updateDefaultTheme()
 
         resurveyIntervalsUpdater.update()
 
@@ -170,7 +184,7 @@ class StreetCompleteApplication : Application() {
         val lastVersion = prefs.getStringOrNull(Prefs.LAST_VERSION_DATA)
         if (BuildConfig.VERSION_NAME != lastVersion) {
             prefs.putString(Prefs.LAST_VERSION_DATA, BuildConfig.VERSION_NAME)
-            if (lastVersion != null) { // todo: remove the migration code, that was long ago
+            if (lastVersion != null) {
                 onNewVersion()
             }
             // update prefs referring to renamed quests
@@ -191,6 +205,12 @@ class StreetCompleteApplication : Application() {
                 }
             }
             e.apply()
+        }
+        settingsListeners += prefs.addStringOrNullListener(Prefs.LANGUAGE_SELECT) {
+            updateDefaultLocales()
+        }
+        settingsListeners += prefs.addStringOrNullListener(Prefs.THEME_SELECT) {
+            updateDefaultTheme()
         }
 
     }
@@ -221,20 +241,17 @@ class StreetCompleteApplication : Application() {
         }
     }
 
+    private fun updateDefaultLocales() {
+        setDefaultLocales(getSelectedLocales(prefs))
+    }
+
     private fun getMemString(): String {
         val memInfo = MemoryInfo()
         getSystemService<ActivityManager>()?.getMemoryInfo(memInfo)
         return "${memInfo.availMem / 0x100000L} MB of ${memInfo.totalMem / 0x100000L} available, mem low: ${memInfo.lowMemory}, mem low threshold: ${memInfo.threshold / 0x100000L} MB"
     }
 
-    private fun setDefaultLocales() {
-        val locale = getSelectedLocale(prefs)
-        if (locale != null) {
-            setDefaultLocales(getSystemLocales().addedToFront(locale))
-        }
-    }
-
-    private fun setDefaultTheme() {
+    private fun updateDefaultTheme() {
         val theme = Prefs.Theme.valueOf(prefs.getStringOrNull(Prefs.THEME_SELECT) ?: getDefaultTheme())
         AppCompatDelegate.setDefaultNightMode(theme.appCompatNightMode)
     }
@@ -262,4 +279,7 @@ class StreetCompleteApplication : Application() {
     companion object {
         lateinit var preferences: SharedPreferences
     }
+
+    private val isConnected: Boolean
+        get() = getSystemService<ConnectivityManager>()?.activeNetworkInfo?.isConnected == true
 }

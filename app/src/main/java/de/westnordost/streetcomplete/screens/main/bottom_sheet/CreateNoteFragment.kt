@@ -30,6 +30,7 @@ import de.westnordost.streetcomplete.quests.note_discussion.AttachPhotoFragment
 import de.westnordost.streetcomplete.util.ktx.childFragmentManagerOrNull
 import de.westnordost.streetcomplete.util.ktx.getLocationInWindow
 import de.westnordost.streetcomplete.util.ktx.hideKeyboard
+import de.westnordost.streetcomplete.util.ktx.isKeyboardOpen
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.util.dialogs.showOutsideDownloadedAreaDialog
 import de.westnordost.streetcomplete.util.viewBinding
@@ -56,7 +57,6 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
     override val bottomSheetContent get() = bottomSheetBinding.speechbubbleContentContainer
     override val floatingBottomView get() = bottomSheetBinding.okButton
     override val floatingBottomView2 get() = bottomSheetBinding.hideButton
-    override val backButton get() = bottomSheetBinding.closeButton
     override val okButtonContainer get() = bottomSheetBinding.okButtonContainer
     override val gpxButton get() = if (prefs.getBoolean(Prefs.SWAP_GPX_NOTE_BUTTONS, false) && prefs.getBoolean(Prefs.GPX_BUTTON, false))
             bottomSheetBinding.okButton
@@ -159,7 +159,10 @@ class CreateNoteFragment : AbstractCreateNoteFragment() {
     override fun onComposedNote(text: String, imagePaths: List<String>, isGpxNote: Boolean) {
         /* pressing once on "OK" should first only close the keyboard, so that the user can review
            the position of the note he placed (this is now optional) */
-        if (prefs.getBoolean(Prefs.HIDE_KEYBOARD_FOR_NOTE, true) && contentBinding.noteInput.hideKeyboard() == true) return
+        if (prefs.getBoolean(Prefs.HIDE_KEYBOARD_FOR_NOTE, true) && contentBinding.noteInput.isKeyboardOpen) {
+            contentBinding.noteInput.hideKeyboard()
+            return
+        }
 
         val createNoteMarker = binding.markerCreateLayout.createNoteMarker
         val screenPos = createNoteMarker.getLocationInWindow()
