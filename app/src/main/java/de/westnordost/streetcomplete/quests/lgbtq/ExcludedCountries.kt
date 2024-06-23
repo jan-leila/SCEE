@@ -3,7 +3,7 @@ package de.westnordost.streetcomplete.quests.lgbtq
 import de.westnordost.streetcomplete.data.quest.AllCountriesExcept
 
 // countries with a LGBT propaganda law, and not in the list of country
-// where homosexuality is illega
+// where homosexuality is illegal
 val LGBTPropagandaCountries =
     listOf(
 	// Belarus, see https://www.reuters.com/world/europe/belarus-prepares-law-against-lgbt-propaganda-state-media-says-2024-02-19/
@@ -14,144 +14,142 @@ val LGBTPropagandaCountries =
 	"KY",
 	// Russia, since 2013 and worst since 2023
 	"RU",
-    )
 )
 
 // countries where homosexuality is illegal
 // even if unenforced or just for male
 val LGBTHomosexualityIllegalCountries =
     listOf(
-	// United Arab Emirates
-	"AE",
-	// Afghanistan
+        // United Arab Emirates
+        "AE",
+        // Afghanistan
         "AF",
-	// Bangladesh
+        // Bangladesh
         "BD",
-	// Burundi
+        // Burundi
         "BI",
-	// Brunei Darussalam
-	"BN",
-	// Cameroon
+        // Brunei Darussalam
+        "BN",
+        // Cameroon
         "CM",
-	// Dominica
+        // Dominica
         "DM",
-	// Algeria
+        // Algeria
         "DZ",
-	// Egypt
+        // Egypt
         "EG",
-	// Eritrea
+        // Eritrea
         "ER",
-	// Ethiopia
+        // Ethiopia
         "ET",
-	// Grenada
+        // Grenada
         "GD",
-	// Ghana
+        // Ghana
         "GH",
-	// Gambia
-	"GM",
-	// Guinea
+        // Gambia
+        "GM",
+        // Guinea
         "GN",
-	// Guyana
+        // Guyana
         "GY",
-	// Indonesia
-	// not illegal, except in one province where it is enforced
+        // Indonesia
+        // not illegal, except in one province where it is enforced
         "ID",
-	// Iraq
-	"IQ",
-	// Iran
-	"IR",
-	// Jamaica
+        // Iraq
+        "IQ",
+        // Iran
+        "IR",
+        // Jamaica
         "JM",
-	// Kenya
+        // Kenya
         "KE",
-	// Kiribati, just for male, but not enforced
+        // Kiribati, just for male, but not enforced
         "KI",
-	// Comoros
-	"KM",
-	// Kuwait, just for male
+        // Comoros
+        "KM",
+        // Kuwait, just for male
         "KW",
-	// Lebanon, unsure in 2024, cf wikipedia
+        // Lebanon, unsure in 2024, cf wikipedia
         "LB",
-	// Sri Lanka
+        // Sri Lanka
         "LK",
-	// Liberia
+        // Liberia
         "LR",
-	// Libya
+        // Libya
         "LY",
-	// Morocco
+        // Morocco
         "MA",
-	// Myanmar
+        // Myanmar
         "MM",
-	// Mauritania
+        // Mauritania
         "MR",
-	// Maldives, not enforced
+        // Maldives, not enforced
         "MV",
-	// Malawi
+        // Malawi
         "MW",
-	// Malaysia
+        // Malaysia
         "MY",
-	// Namibia, not enforced
+        // Namibia, not enforced
         "NA",
-	// Nigeria
+        // Nigeria
         "NG",
-	// Niue
-	"NU",
-	// Oman
+        // Niue
+        "NU",
+        // Oman
         "OM",
-	// Papua New Guinea , illegal for male only
+        // Papua New Guinea , illegal for male only
         "PG",
-	// Pakistan
+        // Pakistan
         "PK",
-	// Qatar
+        // Qatar
         "QA",
-	// Saudi Arabia
+        // Saudi Arabia
         "SA",
-	// Solomon Islands
+        // Solomon Islands
         "SB",
-	// Sudan
-	"SD",
+        // Sudan
+        "SD",
         // Sierra Leone, illegal for male only
         "SL",
-	// Senegal
+        // Senegal
         "SN",
-	// Somalia
+        // Somalia
         "SO",
-	// South Sudan
+        // South Sudan
         "SS",
-	// Eswatini
-	"SZ",
-	// Chad
-	"TD",
-	// Togo
+        // Eswatini
+        "SZ",
+        // Chad
+        "TD",
+        // Togo
         "TG",
-	// Turkmenistan, illegal for male only
+        // Turkmenistan, illegal for male only
         "TM",
-	// Tunisia
+        // Tunisia
         "TN",
-	// Tonga, illegal for male only
+        // Tonga, illegal for male only
         "TO",
-	// Tuvalu,illegal for male only, not enforced
+        // Tuvalu,illegal for male only, not enforced
         "TV",
-	// Tanzania
-	"TZ",
-	// Uganda
+        // Tanzania
+        "TZ",
+        // Uganda
         "UG",
-	// Uzbekistan, illegal for male only
+        // Uzbekistan, illegal for male only
         "UZ",
-	// Saint Lucia
-	"WL",
-	// Samoa, illegal for male only, not enforced
+        // Saint Lucia
+        "WL",
+        // Samoa, illegal for male only, not enforced
         "WS",
-	// Saint Vincent and the Grenadines
-	"WV",
-	// Yemen
+        // Saint Vincent and the Grenadines
+        "WV",
+        // Yemen
         "YE",
-	// Zambia
+        // Zambia
         "ZM",
-	// Zimbabwe
+        // Zimbabwe
         "ZW"
     )
-)
 
 // country where mapping would be fruitless and/or dangerous
 val LGBTExcludedCountries = AllCountriesExcept(
