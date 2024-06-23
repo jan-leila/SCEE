@@ -4,25 +4,29 @@ import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.quests.AImageListQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
 
-class LGBTQAccessForm: AImageListQuestForm<LGTBQAccess, LGBTQAccessAnswer>() {
+class LGBTQAccessForm : AImageListQuestForm<LGTBQAccess, LGBTQAccessAnswer>() {
 
     override val items get() = listOf(
         LGTBQAccess.NO,
         LGTBQAccess.WELCOME,
         LGTBQAccess.PRIMARY,
-        LGTBQAccess.ONLY
+        LGTBQAccess.ONLY,
+        LGTBQAccess.UNKNOWN,
     ).toItems()
 
-    override val itemsPerRow = 3
-
     override val otherAnswers get() = listOfNotNull(
-        AnswerItem(R.string.quest_lgbtq_access_not_marked) {
-            applyAnswer(LGBTQAccessAnswer(null))
+        AnswerItem(R.string.quest_lgbtq_access_hide_forever) {
+            hideQuest()
         }
     )
 
+    override val itemsPerRow = 3
+
     override fun onClickOk(selectedItems: List<LGTBQAccess>) {
         val value = selectedItems.single()
+        if (value.osmValue == null) {
+            tempHideQuest()
+        }
         applyAnswer(LGBTQAccessAnswer(value))
     }
 }

@@ -10,8 +10,16 @@ import de.westnordost.streetcomplete.osm.Tags
 
 class LGBTQAccessQuest : OsmFilterQuestType<LGBTQAccessAnswer>() {
     override val elementFilter = """
-        nodes, ways with (!lgbtq and lgbtq:signed = yes)
+
+        nodes, ways with (
+          amenity ~ swingerclub|nightclub|bar|pub|cafe|restaurant|place_of_worship|community_centre|library|doctors|social_facility
+          or shop ~ erotic|books
+          or leisure ~ sauna|nightclub|nightlife
+        )
+        and (!seasonal or seasonal = no)
+        and !brand and !wikipedia:brand and !wikidata:brand
         and !memorial and !historic
+        and !lgbtq
     """
 
     // countries that are listed here ban lgbtq people
@@ -32,11 +40,8 @@ class LGBTQAccessQuest : OsmFilterQuestType<LGBTQAccessAnswer>() {
     override fun createForm() = LGBTQAccessForm()
 
     override fun applyAnswerTo(answer: LGBTQAccessAnswer, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
-        if (answer.access == null) {
-            tags["lgbtq:signed"] = "no"
-        } else {
+        if (answer.access.osmValue != null) {
             tags["lgbtq"] = answer.access.osmValue
-            tags["lgbtq:signed"] = "yes"
         }
     }
 }
