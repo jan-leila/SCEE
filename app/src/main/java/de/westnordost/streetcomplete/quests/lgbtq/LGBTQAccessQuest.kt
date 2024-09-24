@@ -27,8 +27,7 @@ class LGBTQAccessQuest : OsmFilterQuestType<LGBTQAccessAnswer>() {
 
     override val changesetComment = "Survey lgbtq access"
     override val wikiLink = "Key:lgbtq"
-    // TODO: replace me
-    override val icon = R.drawable.ic_quest_shop
+    override val icon = R.drawable.ic_quest_lgbtq
     override val achievements = listOf(EditTypeAchievement.CITIZEN)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_lgbtq_access

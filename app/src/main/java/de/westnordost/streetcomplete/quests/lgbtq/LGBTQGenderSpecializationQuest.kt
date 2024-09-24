@@ -17,8 +17,7 @@ class LGBTQGenderSpecializationQuest : OsmFilterQuestType<LGBTQGenderSpecializat
 
     override val changesetComment = "Survey lgbtq specificity"
     override val wikiLink = "Key:lgbtq"
-    // TODO: replace me
-    override val icon = R.drawable.ic_quest_shop
+    override val icon = R.drawable.ic_quest_gender
     override val achievements = listOf(EditTypeAchievement.CITIZEN)
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_lgbtq_gender_specialization
