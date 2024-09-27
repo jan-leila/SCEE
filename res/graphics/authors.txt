@@ -332,6 +332,7 @@ quest/
     footway_surface.svg
     footway_surface_detail.svg
     fuel.svg
+    gender.svg                       Flavia Telcean, License: CC-BY-SA 4.0
     hairdresser.svg                  modified from scissors.svg by Matija Nalis (CC0 for modifications)
     housenumber.svg
     housenumber_street.svg
@@ -344,6 +345,7 @@ quest/
     laundry.svg
     leaf.svg
     level.svg
+    lgbtq.svg                        Flavia Telcean, License: CC-BY-SA 4.0, traced from https://wiki.openstreetmap.org/wiki/File:AllPeopleSticker.jpg
     mail.svg
     mail_ref.svg
     max_width.svg
@@ -432,6 +434,7 @@ quest/
     toilets_wheelchair.svg
     tractor.svg
     traffic_lights.svg
+    trans.svg                       Flavia Telcean, License: CC-BY-SA 4.0, based on https://commons.wikimedia.org/wiki/File:Gender_sign_(bold).svg
     via_ferrata_scale.svg           https://www.svgrepo.com/svg/137349/climbing (CC0) and based on way_surface.svg
     way_surface.svg
     way_surface_detail.svg          Tobias Zwick (CC-BY-SA 4.0) (based on street_surface_detail.svg), recoloured background by Flo Edelmann

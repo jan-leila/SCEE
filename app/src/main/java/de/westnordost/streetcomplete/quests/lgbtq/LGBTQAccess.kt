@@ -28,7 +28,7 @@ val LGTBQAccess.titleResId: Int get() = when (this) {
 // TOOD: populate icons
 val LGTBQAccess.iconResId: Int get() = when (this) {
     LGTBQAccess.NO -> R.drawable.surface_asphalt
-    LGTBQAccess.WELCOME -> R.drawable.surface_asphalt
+    LGTBQAccess.WELCOME -> R.drawable.lgbtq_welcome
     LGTBQAccess.PRIMARY -> R.drawable.surface_asphalt
     LGTBQAccess.ONLY -> R.drawable.surface_asphalt
     LGTBQAccess.UNKNOWN -> R.drawable.surface_asphalt

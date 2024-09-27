@@ -26,7 +26,7 @@ class LGBTQAccessForm : AImageListQuestForm<LGTBQAccess, LGBTQAccessAnswer>() {
     override fun onClickOk(selectedItems: List<LGTBQAccess>) {
         val value = selectedItems.single()
         if (value.osmValue == null) {
-            hideOsmQuestController.tempHide(questKey as OsmQuestKey)
+            hideOsmQuestController.hide(questKey as OsmQuestKey)
             return
         }
         applyAnswer(LGBTQAccessAnswer(value))
