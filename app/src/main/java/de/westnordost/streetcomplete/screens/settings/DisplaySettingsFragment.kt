@@ -6,35 +6,30 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
+import androidx.appcompat.widget.Toolbar
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import com.russhwolf.settings.ObservableSettings
-import de.westnordost.streetcomplete.ApplicationConstants.MAX_DOWNLOADABLE_AREA_IN_SQKM
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.StreetCompleteApplication
 import de.westnordost.streetcomplete.data.download.DownloadController
 import de.westnordost.streetcomplete.data.download.DownloadWorker
-import de.westnordost.streetcomplete.data.download.tiles.TilePos
-import de.westnordost.streetcomplete.data.download.tiles.enclosingTilePos
-import de.westnordost.streetcomplete.data.download.tiles.upToTwoMinTileRects
 import de.westnordost.streetcomplete.data.importGpx
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.visiblequests.VisibleQuestTypeController
 import de.westnordost.streetcomplete.screens.HasTitle
 import de.westnordost.streetcomplete.util.dialogs.setViewWithDefaultPadding
+import de.westnordost.streetcomplete.util.ktx.setUpToolbarTitleAndIcon
 import de.westnordost.streetcomplete.util.ktx.toast
-import de.westnordost.streetcomplete.util.logs.Log
-import de.westnordost.streetcomplete.util.math.area
-import de.westnordost.streetcomplete.util.math.contains
-import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
-import de.westnordost.streetcomplete.util.math.isCompletelyInside
+import io.ticofab.androidgpxparser.parser.GPXParser
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -51,6 +46,13 @@ class DisplaySettingsFragment :
     private val downloadController: DownloadController by inject()
 
     override val title: String get() = getString(R.string.pref_screen_display)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.rootView.findViewById<Toolbar>(R.id.toolbar)?.apply {
+            setUpToolbarTitleAndIcon(this)
+        }
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         PreferenceManager.setDefaultValues(requireContext(), R.xml.preferences_ee_display, false)
@@ -69,7 +71,9 @@ class DisplaySettingsFragment :
             setText(R.string.pref_gpx_track_provide)
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
-                type = "application/octet-stream" // allows too many files, but application/gpx+xml doesn't work
+                // actually the type should be application/gpx+xml, but often doesn't work
+                // for some phones only application/octet-stream works, for others it doesn't, so just allow everything
+                type = "*/*"
             }
             setOnClickListener {
                 d?.dismiss()
@@ -144,6 +148,13 @@ class DisplaySettingsFragment :
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
         if (key == Prefs.QUEST_GEOMETRIES)
             visibleQuestTypeController.onQuestTypeVisibilitiesChanged()
+        if (key == Prefs.OFFSET_FIX) {
+            // trigger map update
+            val old = prefs.getString(Prefs.THEME_BACKGROUND, "MAP")
+            val new = if (old == "MAP") "AERIAL" else "MAP"
+            sharedPreferences.edit().putString(Prefs.THEME_BACKGROUND, new).commit()
+            prefs.putString(Prefs.THEME_BACKGROUND, old)
+        }
     }
 
     override fun onResume() {
@@ -171,15 +182,22 @@ fun loadGpxTrackPoints(context: Context, complain: Boolean = false): List<LatLon
             context.toast(R.string.pref_gpx_track_loading_error, Toast.LENGTH_LONG)
         return null
     }
-    val gpxPoints = gpxFile.readLines().mapNotNull { line -> // this is a bit slow, but ok
-        val l = line.trim()
-        if (!l.startsWith("<trkpt") && !l.startsWith("<wpt")) return@mapNotNull null
-        val lat = l.substringAfter("lat=\"").substringBefore("\"").toDoubleOrNull()
-        val lon = l.substringAfter("lon=\"").substringBefore("\"").toDoubleOrNull()
-        if (lat == null || lon == null) null
-        else LatLon(lat, lon)
-    }
-    if (gpxPoints.size < 2) {
+
+    val gpxPoints = runCatching {
+        GPXParser().parse(gpxFile.inputStream()).tracks.map { track ->
+            track.trackSegments.map { segment ->
+                segment.trackPoints
+            }
+        }.flatten().flatten()
+            .map { trackPoint ->
+                LatLon(
+                    latitude = trackPoint.latitude,
+                    longitude = trackPoint.longitude
+                )
+            }
+    }.getOrNull()
+
+    if ((gpxPoints?.size ?: 0) < 2) {
         context.toast(R.string.pref_gpx_track_loading_error, Toast.LENGTH_LONG)
         return null
     }

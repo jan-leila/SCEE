@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.PopupMenu
+import android.widget.RelativeLayout
 import androidx.annotation.UiThread
 import androidx.appcompat.app.AlertDialog
 import androidx.core.os.bundleOf
@@ -60,8 +61,8 @@ import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationA
 import de.westnordost.streetcomplete.util.AccessManagerDialog
 import de.westnordost.streetcomplete.util.FragmentViewBindingPropertyDelegate
 import de.westnordost.streetcomplete.util.accessKeys
+import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
 import de.westnordost.streetcomplete.util.dialogs.setViewWithDefaultPadding
-import de.westnordost.streetcomplete.util.getNameAndLocationLabel
 import de.westnordost.streetcomplete.util.ktx.containsAnyKey
 import de.westnordost.streetcomplete.util.ktx.isArea
 import de.westnordost.streetcomplete.util.ktx.isSplittable
@@ -137,7 +138,7 @@ abstract class AbstractOverlayForm :
             return localizedContext.resources
         }
 
-    // only used for testing / only used for ShowQuestFormsActivity! Found no better way to do this
+    // only used for testing / only used for ShowQuestFormsScreen! Found no better way to do this
     var addElementEditsController: AddElementEditsController = elementEditsController
 
     // view / state
@@ -154,8 +155,8 @@ abstract class AbstractOverlayForm :
     protected val geometry: ElementGeometry
         get() = _geometry ?: ElementPointGeometry(getDefaultMarkerPosition()!!)
 
-    private var initialMapRotation = 0f
-    private var initialMapTilt = 0f
+    private var initialMapRotation = 0.0
+    private var initialMapTilt = 0.0
     override val elementKey: ElementKey? get() = element?.key
 
     protected val metersPerPixel: Double? get() = listener?.metersPerPixel
@@ -202,8 +203,8 @@ abstract class AbstractOverlayForm :
         element = args.getString(ARG_ELEMENT)?.let { Json.decodeFromString(it) }
         _geometry = (savedInstanceState?.getString(ARG_GEOMETRY) ?: args.getString(ARG_GEOMETRY))
             ?.let { Json.decodeFromString(it) }
-        initialMapRotation = args.getFloat(ARG_MAP_ROTATION)
-        initialMapTilt = args.getFloat(ARG_MAP_TILT)
+        initialMapRotation = args.getDouble(ARG_MAP_ROTATION)
+        initialMapTilt = args.getDouble(ARG_MAP_TILT)
         _countryInfo = null // reset lazy field
 
         /* deliberately did not copy the mobile-country-code hack from AbstractQuestForm because
@@ -220,7 +221,7 @@ abstract class AbstractOverlayForm :
         super.onViewCreated(view, savedInstanceState)
 
         setMarkerVisibility(_geometry == null)
-        binding.createMarker.doOnLayout { setMarkerPosition(null) }
+        binding.pin.root.doOnLayout { setMarkerPosition(null) }
         binding.bottomSheetContainer.respectSystemInsets(View::setMargins)
 
         val cornerRadius = resources.getDimension(R.dimen.speech_bubble_rounded_corner_radius)
@@ -231,8 +232,9 @@ abstract class AbstractOverlayForm :
         binding.speechbubbleContentContainer.clipToOutline = true
 
         setTitleHintLabel(
-            element?.let { getNameAndLocationLabel(it, resources, featureDictionary) }
+            element?.let { getNameAndLocationSpanned(it, resources, featureDictionary) }
         )
+        setObjNote(element?.tags?.get("note"))
 
         binding.moreButton.setOnClickListener {
             showOtherAnswers()
@@ -267,7 +269,7 @@ abstract class AbstractOverlayForm :
         }
     }
 
-    override fun onMapOrientation(rotation: Float, tilt: Float) {
+    override fun onMapOrientation(rotation: Double, tilt: Double) {
         // default empty implementation
     }
 
@@ -279,6 +281,19 @@ abstract class AbstractOverlayForm :
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    protected fun setObjNote(text: CharSequence?) {
+        binding.noteLabel.text = text
+        val titleHintLayout = (binding.titleHintLabelContainer.layoutParams as? RelativeLayout.LayoutParams)
+        titleHintLayout?.removeRule(RelativeLayout.ABOVE)
+        titleHintLayout?.addRule(RelativeLayout.ABOVE,
+            if (binding.noteLabel.text.isEmpty())
+                binding.speechbubbleContentContainer.id
+            else
+                binding.speechbubbleNoteContainer.id
+        )
+        binding.speechbubbleNoteContainer.isGone = binding.noteLabel.text.isEmpty()
     }
 
     /* --------------------------------- IsCloseableBottomSheet  ------------------------------- */
@@ -324,11 +339,11 @@ abstract class AbstractOverlayForm :
     }
 
     protected fun setMarkerIcon(iconResId: Int) {
-        binding.createMarkerIconView.setImageResource(iconResId)
+        binding.pin.pinIconView.setImageResource(iconResId)
     }
 
     protected fun setMarkerVisibility(isVisible: Boolean) {
-        binding.createMarker.isInvisible = !isVisible
+        binding.pin.root.isInvisible = !isVisible
     }
 
     protected fun setMarkerPosition(position: LatLon?) {
@@ -337,8 +352,8 @@ abstract class AbstractOverlayForm :
         } else {
             listener?.getPointOf(position)
         } ?: return
-        binding.createMarker.x = point.x - binding.createMarker.width / 2
-        binding.createMarker.y = point.y - binding.createMarker.height
+        binding.pin.root.x = point.x - binding.pin.root.width / 2
+        binding.pin.root.y = point.y - binding.pin.root.height / 2
     }
 
     private fun updateContentPadding() {
@@ -378,7 +393,7 @@ abstract class AbstractOverlayForm :
     protected abstract fun onClickOk()
 
     protected inline fun <reified T : ViewBinding> contentViewBinding(
-        noinline viewBinder: (View) -> T
+        noinline viewBinder: (View) -> T,
     ) = FragmentViewBindingPropertyDelegate(this, viewBinder, R.id.content)
 
     /* -------------------------------------- ...-Button -----------------------------------------*/
@@ -542,7 +557,7 @@ abstract class AbstractOverlayForm :
 
     protected fun composeNote(element: Element) {
         val overlayTitle = englishResources.getString(overlay.title)
-        val hintLabel = getNameAndLocationLabel(element, englishResources, featureDictionary)
+        val hintLabel = getNameAndLocationSpanned(element, englishResources, featureDictionary)
         val leaveNoteContext = if (hintLabel.isNullOrBlank()) {
             "In context of overlay \"$overlayTitle\""
         } else {
@@ -597,7 +612,7 @@ abstract class AbstractOverlayForm :
         private const val ARG_MAP_ROTATION = "map_rotation"
         private const val ARG_MAP_TILT = "map_tilt"
 
-        fun createArguments(overlay: Overlay, element: Element?, geometry: ElementGeometry?, rotation: Float, tilt: Float) = bundleOf(
+        fun createArguments(overlay: Overlay, element: Element?, geometry: ElementGeometry?, rotation: Double, tilt: Double) = bundleOf(
             ARG_ELEMENT to element?.let { Json.encodeToString(it) },
             ARG_GEOMETRY to geometry?.let { Json.encodeToString(it) },
             ARG_OVERLAY to overlay.name,

@@ -1,7 +1,9 @@
 package de.westnordost.streetcomplete.data.visiblequests
 
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.testutils.any
 import de.westnordost.streetcomplete.testutils.mock
+import de.westnordost.streetcomplete.testutils.mockPrefs3
 import de.westnordost.streetcomplete.testutils.on
 import org.mockito.Mockito.verify
 import kotlin.test.BeforeTest
@@ -11,7 +13,7 @@ import kotlin.test.assertEquals
 class QuestPresetControllerTest {
 
     private lateinit var questPresetsDao: QuestPresetsDao
-    private lateinit var selectedQuestPresetStore: SelectedQuestPresetStore
+    private lateinit var prefs: Preferences
     private lateinit var ctrl: QuestPresetsController
     private lateinit var listener: QuestPresetsSource.Listener
 
@@ -19,8 +21,8 @@ class QuestPresetControllerTest {
 
     @BeforeTest fun setUp() {
         questPresetsDao = mock()
-        selectedQuestPresetStore = mock()
-        ctrl = QuestPresetsController(questPresetsDao, selectedQuestPresetStore, mock())
+        prefs = mockPrefs3()
+        ctrl = QuestPresetsController(questPresetsDao, prefs)
 
         listener = mock()
         ctrl.addListener(listener)
@@ -28,7 +30,7 @@ class QuestPresetControllerTest {
 
     @Test fun get() {
         on(questPresetsDao.getName(1)).thenReturn("huhu")
-        on(selectedQuestPresetStore.get()).thenReturn(1)
+        on(prefs.selectedQuestPreset).thenReturn(1)
         assertEquals("huhu", ctrl.selectedQuestPresetName)
     }
 
@@ -55,12 +57,12 @@ class QuestPresetControllerTest {
         ctrl.delete(55)
         verify(questPresetsDao).delete(55)
         verify(listener).onDeletedQuestPreset(55)
-        verify(selectedQuestPresetStore).set(0)
+        verify(prefs).selectedQuestPreset = 0L
     }
 
     @Test fun `change current preset`() {
         ctrl.selectedId = 11
-        verify(selectedQuestPresetStore).set(11)
-        verify(listener).onSelectedQuestPresetChanged()
+        verify(prefs).selectedQuestPreset = 11
+        verify(prefs).onSelectedQuestPresetChanged(any())
     }
 }

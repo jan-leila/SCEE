@@ -10,8 +10,6 @@ import android.graphics.Color
 import android.graphics.PointF
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
-import android.graphics.Rect
-import android.graphics.RectF
 import android.graphics.drawable.LayerDrawable
 import android.location.Location
 import android.os.Bundle
@@ -35,7 +33,6 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.Insets
 import androidx.core.graphics.minus
 import androidx.core.graphics.toPointF
-import androidx.core.graphics.toRectF
 import androidx.core.os.ConfigurationCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isGone
@@ -45,7 +42,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.commit
 import androidx.lifecycle.Lifecycle
-import com.russhwolf.settings.ObservableSettings
 import de.westnordost.countryboundaries.CountryBoundaries
 import de.westnordost.osmfeatures.Feature
 import de.westnordost.osmfeatures.FeatureDictionary
@@ -56,6 +52,7 @@ import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.StreetCompleteApplication
 import de.westnordost.streetcomplete.data.UnsyncedChangesCountSource
+import de.westnordost.streetcomplete.data.download.DownloadWorker
 import de.westnordost.streetcomplete.data.download.tiles.asBoundingBoxOfEnclosingTiles
 import de.westnordost.streetcomplete.data.edithistory.EditKey
 import de.westnordost.streetcomplete.data.edithistory.icon
@@ -80,12 +77,15 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuest
 import de.westnordost.streetcomplete.data.osmnotes.edits.NotesWithEditsSource
 import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuest
+import de.westnordost.streetcomplete.data.osmnotes.notequests.OsmNoteQuestsHiddenSource
 import de.westnordost.streetcomplete.data.osmtracks.Trackpoint
 import de.westnordost.streetcomplete.data.externalsource.ExternalSourceQuest
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPointGeometry
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestController
 import de.westnordost.streetcomplete.data.overlays.OverlayRegistry
 import de.westnordost.streetcomplete.data.overlays.SelectedOverlayController
+import de.westnordost.streetcomplete.data.preferences.Autosync
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.Quest
 import de.westnordost.streetcomplete.data.quest.QuestKey
 import de.westnordost.streetcomplete.data.quest.QuestType
@@ -119,17 +119,18 @@ import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapOrientationA
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.IsMapPositionAware
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.MoveNodeFragment
 import de.westnordost.streetcomplete.screens.main.bottom_sheet.SplitWayFragment
-import de.westnordost.streetcomplete.screens.main.controls.LocationStateButton
+import de.westnordost.streetcomplete.screens.main.controls.LocationState
 import de.westnordost.streetcomplete.screens.main.controls.MainMenuDialog
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryFragment
 import de.westnordost.streetcomplete.screens.main.edithistory.EditHistoryViewModel
-import de.westnordost.streetcomplete.screens.main.map.LocationAwareMapFragment
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
 import de.westnordost.streetcomplete.screens.main.map.MapFragment
+import de.westnordost.streetcomplete.screens.main.map.Marker
 import de.westnordost.streetcomplete.screens.main.map.ShowsGeometryMarkers
-import de.westnordost.streetcomplete.screens.main.map.getPinIcon
+import de.westnordost.streetcomplete.screens.main.map.getIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
-import de.westnordost.streetcomplete.screens.main.map.tangram.CameraPosition
+import de.westnordost.streetcomplete.screens.main.map.maplibre.CameraPosition
+import de.westnordost.streetcomplete.screens.main.map.maplibre.toPadding
 import de.westnordost.streetcomplete.screens.main.overlays.OverlaySelectionAdapter
 import de.westnordost.streetcomplete.screens.settings.DisplaySettingsFragment
 import de.westnordost.streetcomplete.util.SoundFx
@@ -141,11 +142,12 @@ import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.getLocationInWindow
 import de.westnordost.streetcomplete.util.ktx.hasLocationPermission
 import de.westnordost.streetcomplete.util.ktx.hideKeyboard
-import de.westnordost.streetcomplete.util.ktx.isLocationEnabled
+import de.westnordost.streetcomplete.util.ktx.isLocationAvailable
 import de.westnordost.streetcomplete.util.ktx.observe
 import de.westnordost.streetcomplete.util.ktx.popIn
 import de.westnordost.streetcomplete.util.ktx.popOut
 import de.westnordost.streetcomplete.util.ktx.setMargins
+import de.westnordost.streetcomplete.util.ktx.setPadding
 import de.westnordost.streetcomplete.util.ktx.toLatLon
 import de.westnordost.streetcomplete.util.ktx.toList
 import de.westnordost.streetcomplete.util.ktx.toast
@@ -166,6 +168,7 @@ import de.westnordost.streetcomplete.view.dialogs.SearchFeaturesDialog
 import de.westnordost.streetcomplete.view.insets_animation.respectSystemInsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -196,12 +199,11 @@ import kotlin.random.Random
  *  IntelliJ, you can collapse sections of this class that start with "//region" using the little
  *  [-] icon next to it.
  *
- *  */
+ */
 class MainFragment :
     Fragment(R.layout.fragment_main),
     // listeners to child fragments:
     MapFragment.Listener,
-    LocationAwareMapFragment.Listener,
     MainMapFragment.Listener,
     AbstractOsmQuestForm.Listener,
     AbstractOverlayForm.Listener,
@@ -221,6 +223,7 @@ class MainFragment :
     private val visibleQuestsSource: VisibleQuestsSource by inject()
     private val mapDataWithEditsSource: MapDataWithEditsSource by inject()
     private val notesSource: NotesWithEditsSource by inject()
+    private val noteQuestsHiddenSource: OsmNoteQuestsHiddenSource by inject()
     private val locationAvailabilityReceiver: LocationAvailabilityReceiver by inject()
     private val selectedOverlaySource: SelectedOverlayController by inject()
     private val featureDictionary: Lazy<FeatureDictionary> by inject(named("FeatureDictionaryLazy"))
@@ -231,7 +234,7 @@ class MainFragment :
     private val questTypeRegistry: QuestTypeRegistry by inject()
     private val overlayRegistry: OverlayRegistry by inject()
     private val osmQuestController: OsmQuestController by inject()
-    private val prefs: ObservableSettings by inject()
+    private val prefs: Preferences by inject()
     private val selectedOverlayController: SelectedOverlayController by inject()
     private val unsyncedChangesCountSource: UnsyncedChangesCountSource by inject()
 
@@ -244,6 +247,7 @@ class MainFragment :
 
     private var wasFollowingPosition: Boolean? = null
     private var wasNavigationMode: Boolean? = null
+    private var selectedOverlay: Overlay? = null
 
     private var windowInsets: Insets? = null
 
@@ -254,8 +258,6 @@ class MainFragment :
 
     private val editHistoryFragment: EditHistoryFragment? get() =
         childFragmentManagerOrNull?.findFragmentByTag(EDIT_HISTORY) as? EditHistoryFragment
-
-    private var mapOffsetWithOpenBottomSheet: RectF = RectF(0f, 0f, 0f, 0f)
 
     interface Listener {
         fun onMapInitialized()
@@ -268,7 +270,8 @@ class MainFragment :
 
     private val historyBackPressedCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
-            mapFragment?.endFocus(0L)
+//            mapFragment?.endFocus(0L) // todo: test, maybe re-introduce it
+            mapFragment?.endFocus()
             closeEditHistorySidebar()
         }
     }
@@ -368,8 +371,6 @@ class MainFragment :
         binding.overlaysButton.setOnClickListener { onClickOverlaysButton() }
         binding.mainMenuButton.setOnClickListener { onClickMainMenu() }
 
-        updateOffsetWithOpenBottomSheet()
-
         requireActivity().onBackPressedDispatcher
             .addCallback(viewLifecycleOwner, historyBackPressedCallback)
         historyBackPressedCallback.isEnabled = editHistoryFragment != null
@@ -402,7 +403,7 @@ class MainFragment :
         observe(controlsViewModel.starsCount) { count ->
             // only animate if count is positive, for positive feedback
             binding.starsCounterView.setUploadedCount(count, count > 0)
-            val isAutosync = Prefs.Autosync.valueOf(prefs.getStringOrNull(Prefs.AUTOSYNC) ?: ApplicationConstants.DEFAULT_AUTOSYNC) == Prefs.Autosync.ON
+            val isAutosync = prefs.autosync == Autosync.ON
             binding.starsCounterView.showUnsyncedChangesIndicator = isAutosync && unsyncedChangesCountSource.getCount() != 0
         }
         observe(controlsViewModel.selectedOverlay) { overlay ->
@@ -417,6 +418,13 @@ class MainFragment :
             } else
                 overlay?.icon ?: R.drawable.ic_overlay_black_24dp
             binding.overlaysButton.setImageResource(iconRes)
+            if (selectedOverlay != overlay) {
+                val f = bottomSheetFragment
+                if (f is IsShowingElement) {
+                    closeBottomSheet()
+                }
+            }
+            selectedOverlay = overlay
             reloadOverlaySelector()
         }
         observe(controlsViewModel.isTeamMode) { isTeamMode ->
@@ -436,11 +444,6 @@ class MainFragment :
             val isCreateNodeEnabled = overlay?.isCreateNodeEnabled == true
             binding.createButton.isGone = !isCreateNodeEnabled
             binding.crosshairView.isGone = !isCreateNodeEnabled
-
-            val f = bottomSheetFragment
-            if (f is IsShowingElement) {
-                closeBottomSheet()
-            }
         }
         observe(editHistoryViewModel.editItems) { editItems ->
             if (editItems.isEmpty()) closeEditHistorySidebar()
@@ -452,7 +455,7 @@ class MainFragment :
                 mapFragment?.clearHighlighting()
             } else {
                 val geometry = editHistoryViewModel.getEditGeometry(edit)
-                mapFragment?.startFocus(geometry, mapOffsetWithOpenBottomSheet)
+                mapFragment?.startFocus(geometry, Insets.NONE)
                 mapFragment?.highlightGeometry(geometry)
                 mapFragment?.highlightPins(edit.icon, listOf(edit.position))
                 mapFragment?.hideOverlay()
@@ -467,8 +470,6 @@ class MainFragment :
             View.VISIBLE
         else
             View.GONE
-        if (mapFragment?.isMapInitialized == true)
-            mapFragment?.show3DBuildings = prefs.getBoolean(Prefs.SHOW_3D_BUILDINGS, true)
         if (DisplaySettingsFragment.gpx_track_changed) {
             mapFragment?.loadGpxTrack()
             DisplaySettingsFragment.gpx_track_changed = false
@@ -478,22 +479,10 @@ class MainFragment :
     @UiThread
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+
         Log.i(TAG, "onConfigurationChanged")
-        val mapFragment = this.mapFragment ?: return
-        /* when rotating the screen and the bottom sheet is open, the view
-           should not rotate around its proper center but around the center
-           of the part of the map that is not occluded by the bottom sheet */
-        val previousOffset = mapOffsetWithOpenBottomSheet
-        updateOffsetWithOpenBottomSheet()
-        if (bottomSheetFragment != null) {
-            mapFragment.adjustToOffsets(previousOffset, mapOffsetWithOpenBottomSheet)
-        }
-        binding.crosshairView.setPadding(
-            resources.getDimensionPixelSize(R.dimen.quest_form_leftOffset),
-            resources.getDimensionPixelSize(R.dimen.quest_form_topOffset),
-            resources.getDimensionPixelSize(R.dimen.quest_form_rightOffset),
-            resources.getDimensionPixelSize(R.dimen.quest_form_bottomOffset)
-        )
+        binding.crosshairView.setPadding(getQuestFormInsets())
+
         updateLocationPointerPin()
     }
 
@@ -504,7 +493,7 @@ class MainFragment :
         visibleQuestsSource.addListener(this)
         mapDataWithEditsSource.addListener(this)
         locationAvailabilityReceiver.addListener(::updateLocationAvailability)
-        updateLocationAvailability(requireContext().run { hasLocationPermission && isLocationEnabled })
+        updateLocationAvailability(requireContext().isLocationAvailable)
         StreetCompleteApplication.preferences.registerOnSharedPreferenceChangeListener(this)
         reloadOverlaySelector()
     }
@@ -522,14 +511,12 @@ class MainFragment :
         clearOverlaySelector()
     }
 
-    private fun updateOffsetWithOpenBottomSheet() {
-        mapOffsetWithOpenBottomSheet = Rect(
-            resources.getDimensionPixelSize(R.dimen.quest_form_leftOffset),
-            resources.getDimensionPixelSize(R.dimen.quest_form_topOffset),
-            resources.getDimensionPixelSize(R.dimen.quest_form_rightOffset),
-            resources.getDimensionPixelSize(R.dimen.quest_form_bottomOffset)
-        ).toRectF()
-    }
+    private fun getQuestFormInsets() = Insets.of(
+        resources.getDimensionPixelSize(R.dimen.quest_form_leftOffset),
+        resources.getDimensionPixelSize(R.dimen.quest_form_topOffset),
+        resources.getDimensionPixelSize(R.dimen.quest_form_rightOffset),
+        resources.getDimensionPixelSize(R.dimen.quest_form_bottomOffset)
+    )
 
     //endregion
 
@@ -572,6 +559,7 @@ class MainFragment :
                             viewLifecycleScope.launch(Dispatchers.IO) {
                                 if (isCurrentCustomOverlay && selectedOverlaySource.selectedOverlay is CustomOverlay) {
                                     selectedOverlaySource.selectedOverlay = null
+                                    delay(100) // need a rather long delay for this to work...
                                     selectedOverlaySource.selectedOverlay = overlayRegistry.getByName(CustomOverlay::class.simpleName!!)
                                 }
                                 reloadOverlaySelector()
@@ -620,16 +608,15 @@ class MainFragment :
         binding.gpsTrackingButton.isNavigation = mapFragment?.isNavigationMode ?: false
         binding.stopTracksButton.isVisible = mapFragment?.isRecordingTracks ?: false
         updateLocationPointerPin()
-        mapFragment?.show3DBuildings = prefs.getBoolean(Prefs.SHOW_3D_BUILDINGS, true)
         mapFragment?.cameraPosition?.zoom?.let { updateCreateButtonEnablement(it) }
         listener?.onMapInitialized()
     }
 
-    override fun onMapIsChanging(position: LatLon, rotation: Float, tilt: Float, zoom: Float) {
-        binding.compassView.rotation = (180 * rotation / PI).toFloat()
-        binding.compassView.rotationX = (180 * tilt / PI).toFloat()
+    override fun onMapIsChanging(position: LatLon, rotation: Double, tilt: Double, zoom: Double) {
+        binding.compassView.rotation = -rotation.toFloat()
+        binding.compassView.rotationX = tilt.toFloat()
 
-        val margin = 2 * PI / 180
+        val margin = 2
         binding.compassView.isInvisible = binding.otherQuestsScrollView.visibility == View.VISIBLE
             || (abs(rotation) < margin && tilt < margin)
 
@@ -650,23 +637,13 @@ class MainFragment :
         }
     }
 
-    override fun onMapDidChange(position: LatLon, rotation: Float, tilt: Float, zoom: Float) { }
-
-    override fun onLongPress(x: Float, y: Float) {
-        val point = PointF(x, y)
-        val position = mapFragment?.getPositionAt(point) ?: return
+    override fun onLongPress(point: PointF, position: LatLon) {
         if (bottomSheetFragment != null || editHistoryFragment != null) return
 
-        binding.contextMenuView.translationX = x
-        binding.contextMenuView.translationY = y
+        binding.contextMenuView.translationX = point.x
+        binding.contextMenuView.translationY = point.y
 
         showMapContextMenu(position)
-    }
-
-    /* ---------------------------- LocationAwareMapFragment.Listener --------------------------- */
-
-    override fun onDisplayedLocationDidChange() {
-        updateLocationPointerPin()
     }
 
     /* ---------------------------- MainMapFragment.Listener --------------------------- */
@@ -704,6 +681,10 @@ class MainFragment :
         } else {
             viewLifecycleScope.launch { showElementDetails(elementKey) }
         }
+    }
+
+    override fun onDisplayedLocationDidChange() {
+        updateLocationPointerPin()
     }
 
     //endregion
@@ -801,10 +782,10 @@ class MainFragment :
         if (editType !is Overlay) {
             mapFragment.hideOverlay()
         }
-
-        mapFragment.show3DBuildings = false
-        val offsetPos = mapFragment.getPositionThatCentersPosition(node.position, RectF())
-        mapFragment.updateCameraPosition { position = offsetPos }
+        mapFragment.updateCameraPosition {
+            position = node.position
+            padding = getQuestFormInsets().toPadding()
+        }
     }
 
     override fun onMovedNode(editType: ElementEditType, position: LatLon) {
@@ -817,21 +798,15 @@ class MainFragment :
 
     /* ------------------------------- ShowsPointMarkers -------------------------------- */
 
-    override fun putMarkerForCurrentHighlighting(
-        geometry: ElementGeometry,
-        @DrawableRes drawableResId: Int?,
-        title: String?,
-        color: Int?,
-        rotation: Double?
-    ) {
-        mapFragment?.putMarkerForCurrentHighlighting(geometry, drawableResId, title, color, rotation)
+    override fun putMarkersForCurrentHighlighting(markers: Iterable<Marker>) {
+        mapFragment?.putMarkersForCurrentHighlighting(markers)
     }
 
-    override fun deleteMarkerForCurrentHighlighting(geometry: ElementGeometry) {
+    @UiThread override fun deleteMarkerForCurrentHighlighting(geometry: ElementGeometry) {
         mapFragment?.deleteMarkerForCurrentHighlighting(geometry)
     }
 
-    override fun clearMarkersForCurrentHighlighting() {
+    @UiThread override fun clearMarkersForCurrentHighlighting() {
         mapFragment?.clearMarkersForCurrentHighlighting()
     }
 
@@ -943,7 +918,7 @@ class MainFragment :
 
     @SuppressLint("MissingPermission")
     private fun onLocationIsEnabled() {
-        binding.gpsTrackingButton.state = LocationStateButton.State.SEARCHING
+        binding.gpsTrackingButton.state = LocationState.SEARCHING
         mapFragment!!.startPositionTracking()
 
         setIsFollowingPosition(wasFollowingPosition ?: true)
@@ -952,8 +927,8 @@ class MainFragment :
 
     private fun onLocationIsDisabled() {
         binding.gpsTrackingButton.state = when {
-            requireContext().hasLocationPermission -> LocationStateButton.State.ALLOWED
-            else -> LocationStateButton.State.DENIED
+            requireContext().hasLocationPermission -> LocationState.ALLOWED
+            else -> LocationState.DENIED
         }
         binding.gpsTrackingButton.isNavigation = false
         binding.locationPointerPin.visibility = View.GONE
@@ -963,7 +938,7 @@ class MainFragment :
 
     private fun onLocationChanged(location: Location) {
         viewLifecycleScope.launch {
-            binding.gpsTrackingButton.state = LocationStateButton.State.UPDATING
+            binding.gpsTrackingButton.state = LocationState.UPDATING
             updateLocationPointerPin()
         }
     }
@@ -987,7 +962,7 @@ class MainFragment :
     private fun onClickDownload() {
         if (controlsViewModel.isConnected) {
             val downloadBbox = getDownloadArea() ?: return
-            if (controlsViewModel.isUserInitiatedDownloadInProgress) {
+            if (controlsViewModel.isUserInitiatedDownloadInProgress || DownloadWorker.downloading || DownloadWorker.enqueuedDownloads.isNotEmpty()) {
                 context?.let {
                     AlertDialog.Builder(it)
                         .setMessage(R.string.confirmation_cancel_prev_download_title)
@@ -1027,11 +1002,11 @@ class MainFragment :
     }
 
     fun onClickZoomOut() {
-        mapFragment?.updateCameraPosition(300) { zoomBy = -1f }
+        mapFragment?.updateCameraPosition(300) { zoomBy = -1.0 }
     }
 
     fun onClickZoomIn() {
-        mapFragment?.updateCameraPosition(300) { zoomBy = +1f }
+        mapFragment?.updateCameraPosition(300) { zoomBy = +1.0 }
     }
 
     private fun onClickTracksStop() {
@@ -1087,12 +1062,12 @@ class MainFragment :
 
         // if the user wants to rotate back north, it means he also doesn't want to use nav mode anymore
         if (mapFragment.isNavigationMode) {
-            mapFragment.updateCameraPosition(300) { rotation = 0f }
+            mapFragment.updateCameraPosition(300) { rotation = 0.0 }
             setIsNavigationMode(false)
         } else {
             mapFragment.updateCameraPosition(300) {
-                rotation = 0f
-                tilt = 0f
+                rotation = 0.0
+                tilt = 0.0
             }
         }
     }
@@ -1122,16 +1097,14 @@ class MainFragment :
         showOverlayFormForNewElement()
     }
 
-    private fun updateCreateButtonEnablement(zoom: Float) {
-        binding.createButton.isEnabled = zoom >= 18f
+    private fun updateCreateButtonEnablement(zoom: Double) {
+        binding.createButton.isEnabled = zoom >= 17.0
     }
 
     private fun setIsNavigationMode(navigation: Boolean) {
         val mapFragment = mapFragment ?: return
         mapFragment.isNavigationMode = navigation
         binding.gpsTrackingButton.isNavigation = navigation
-        // always re-center position because navigation mode shifts the center position
-        mapFragment.centerCurrentPositionIfFollowing()
     }
 
     private fun setIsFollowingPosition(follow: Boolean) {
@@ -1158,7 +1131,7 @@ class MainFragment :
 
         popupWindow.setAdapter(adapter)
         popupWindow.setOnItemClickListener { _, _, position, _ ->
-//            controlsViewModel.selectOverlay(adapter.getItem(position)) would be nice to do it like this, but not improtant right now
+//            controlsViewModel.selectOverlay(adapter.getItem(position)) would be nice to do it like this, but not important right now
             var selectedOverlay = adapter.getItem(position)
             if (selectedOverlay?.title == 0) {
                 prefs.putInt(Prefs.CUSTOM_OVERLAY_SELECTED_INDEX, selectedOverlay.wikiLink!!.toInt())
@@ -1169,7 +1142,11 @@ class MainFragment :
                 val newIdx = if (prefs.getString(Prefs.CUSTOM_OVERLAY_INDICES, "0").isBlank()) 0
                 else getCustomOverlayIndices(prefs).max() + 1
                 showOverlayCustomizer(newIdx, requireContext(), prefs, questTypeRegistry, {
-                    selectedOverlayController.selectedOverlay = overlayRegistry.getByName(CustomOverlay::class.simpleName!!)
+                    viewLifecycleScope.launch(Dispatchers.IO) {
+                        selectedOverlayController.selectedOverlay = null
+                        delay(100) // need a rather long delay for this to work...
+                        selectedOverlayController.selectedOverlay = overlayRegistry.getByName(CustomOverlay::class.simpleName!!)
+                    }
                 }, {
                     // do nothing if deleted (should not be possible)
                 })
@@ -1250,7 +1227,7 @@ class MainFragment :
     }
 
     private fun onClickCreateNote(pos: LatLon) {
-        if ((mapFragment?.cameraPosition?.zoom ?: 0f) < ApplicationConstants.NOTE_MIN_ZOOM) {
+        if ((mapFragment?.cameraPosition?.zoom ?: 0.0) < ApplicationConstants.NOTE_MIN_ZOOM) {
             context?.toast(R.string.create_new_note_unprecise)
             return
         }
@@ -1266,14 +1243,14 @@ class MainFragment :
     private fun composeNote(pos: LatLon, hasGpxAttached: Boolean = false) {
         val mapFragment = mapFragment ?: return
         showInBottomSheet(CreateNoteFragment.create(hasGpxAttached))
-
-        mapFragment.show3DBuildings = false
-        val offsetPos = mapFragment.getPositionThatCentersPosition(pos, mapOffsetWithOpenBottomSheet)
-        mapFragment.updateCameraPosition { position = offsetPos }
+        mapFragment.updateCameraPosition(300) {
+            position = pos
+            padding = getQuestFormInsets().toPadding()
+        }
     }
 
     private fun onClickAddPoi(pos: LatLon) {
-        if ((mapFragment?.cameraPosition?.zoom ?: 0f) < ApplicationConstants.NOTE_MIN_ZOOM) {
+        if ((mapFragment?.cameraPosition?.zoom ?: 0.0) < ApplicationConstants.NOTE_MIN_ZOOM) {
             context?.toast(R.string.create_new_note_unprecise)
             return
         }
@@ -1319,24 +1296,24 @@ class MainFragment :
                 data.filter { filter.matches(it) }
             }
 
-            for (e in elements) {
+            putMarkersForCurrentHighlighting(elements.mapNotNull { e ->
                 // include only elements that fit with the currently active level filter
-                if (!levelFilter.levelAllowed(e)) continue
+                if (!levelFilter.levelAllowed(e)) return@mapNotNull null
 
-                val geometry = data.getGeometry(e.type, e.id) ?: continue
-                val icon = getPinIcon(featureDictionary.value, e)
+                val geometry = data.getGeometry(e.type, e.id) ?: return@mapNotNull null
+                val icon = getIcon(featureDictionary.value, e)
                 val title = getTitle(e.tags)
-                putMarkerForCurrentHighlighting(geometry, icon, title)
-            }
+                Marker(geometry, icon, title)
+            })
         }
         offsetPos(pos)
     }
 
     fun offsetPos(pos: LatLon) {
-        val mapFragment = mapFragment ?: return
-        mapFragment.show3DBuildings = false
-        val offsetPos = mapFragment.getPositionThatCentersPosition(pos, mapOffsetWithOpenBottomSheet)
-        mapFragment.updateCameraPosition { position = offsetPos }
+        mapFragment?.updateCameraPosition(300) {
+            position = pos
+            padding = getQuestFormInsets().toPadding()
+        }
     }
 
     private fun onClickCreateTrack() {
@@ -1360,7 +1337,7 @@ class MainFragment :
         }
         val displayedPosition = LatLon(location.latitude, location.longitude)
 
-        var target = mapFragment.getClippedPointOf(displayedPosition) ?: return
+        var target = mapFragment.getPointOf(displayedPosition) ?: return
         windowInsets?.let {
             target -= PointF(it.left.toFloat(), it.top.toFloat())
         }
@@ -1370,9 +1347,9 @@ class MainFragment :
             binding.locationPointerPin.isGone = intersectionPosition == null
             if (intersectionPosition != null) {
                 val angleAtIntersection = position.initialBearingTo(intersectionPosition)
-                binding.locationPointerPin.pinRotation = angleAtIntersection.toFloat() + (180 * rotation / PI).toFloat()
+                binding.locationPointerPin.pinRotation = (angleAtIntersection - rotation).toFloat()
 
-                val a = angleAtIntersection * PI / 180f + rotation
+                val a = (angleAtIntersection - rotation) * PI / 180f
                 val offsetX = (sin(a) / 2.0 + 0.5) * binding.locationPointerPin.width
                 val offsetY = (-cos(a) / 2.0 + 0.5) * binding.locationPointerPin.height
                 binding.locationPointerPin.x = intersection.x - offsetX.toFloat()
@@ -1392,6 +1369,7 @@ class MainFragment :
     //region Edit History Sidebar
 
     private fun showEditHistorySidebar(allHidden: Boolean = false) {
+        freezeMap()
         val appearAnim = R.animator.edit_history_sidebar_appear
         val disappearAnim = R.animator.edit_history_sidebar_disappear
         if (editHistoryFragment != null) {
@@ -1408,6 +1386,7 @@ class MainFragment :
     }
 
     private fun closeEditHistorySidebar() {
+        unfreezeMap()
         if (editHistoryFragment != null) {
             childFragmentManager.popBackStack(EDIT_HISTORY, FragmentManager.POP_BACK_STACK_INCLUSIVE)
         }
@@ -1482,7 +1461,6 @@ class MainFragment :
 
     private fun clearHighlighting() {
         mapFragment?.clearHighlighting()
-        mapFragment?.show3DBuildings = prefs.getBoolean(Prefs.SHOW_3D_BUILDINGS, true)
     }
 
     //endregion
@@ -1497,18 +1475,22 @@ class MainFragment :
         if (overlay is CustomOverlay) {
             val pos = camera?.position ?: return
             showInBottomSheet(CreatePoiFragment.createWithPrefill(prefs.getString(Prefs.CUSTOM_OVERLAY_IDX_FILTER, "")!!.substringAfter("with "), pos))
-            mapFragment.show3DBuildings = false
             return
         }
 
         val f = overlay.createForm(null) ?: return
         if (f.arguments == null) f.arguments = bundleOf()
-        val rotation = camera?.rotation ?: 0f
-        val tilt = camera?.tilt ?: 0f
+        val rotation = camera?.rotation ?: 0.0
+        val tilt = camera?.tilt ?: 0.0
         val args = AbstractOverlayForm.createArguments(overlay, null, null, rotation, tilt)
         f.requireArguments().putAll(args)
 
         showInBottomSheet(f)
+        val pos = getCrosshairPoint()?.let { getMapPositionAt(it) }
+        mapFragment.updateCameraPosition {
+            position = pos
+            padding = getQuestFormInsets().toPadding()
+        }
         mapFragment.hideNonHighlightedPins()
     }
 
@@ -1526,6 +1508,7 @@ class MainFragment :
             notesSource
                 .getAll(BoundingBox(center, center).enlargedBy(1.2)).filterNot { it.isClosed }
                 .firstOrNull { it.position.truncateTo5Decimals() == center.truncateTo5Decimals() }
+                ?.takeIf { noteQuestsHiddenSource.getHidden(it.id) == null }
         }
         if (note != null) {
             showQuestDetails(OsmNoteQuest(note.id, note.position))
@@ -1537,8 +1520,8 @@ class MainFragment :
         if (f.arguments == null) f.arguments = bundleOf()
 
         val camera = mapFragment.cameraPosition
-        val rotation = camera?.rotation ?: 0f
-        val tilt = camera?.tilt ?: 0f
+        val rotation = camera?.rotation ?: 0.0
+        val tilt = camera?.tilt ?: 0.0
         val args = AbstractOverlayForm.createArguments(overlay, element, geometry, rotation, tilt)
         f.requireArguments().putAll(args)
 
@@ -1572,8 +1555,8 @@ class MainFragment :
         if (f.arguments == null) f.arguments = bundleOf()
 
         val camera = mapFragment.cameraPosition
-        val rotation = camera?.rotation ?: 0f
-        val tilt = camera?.tilt ?: 0f
+        val rotation = camera?.rotation ?: 0.0
+        val tilt = camera?.tilt ?: 0.0
         val args = AbstractQuestForm.createArguments(quest.key, quest.type, quest.geometry, rotation, tilt)
         f.requireArguments().putAll(args)
 
@@ -1589,21 +1572,19 @@ class MainFragment :
         if (quest is OsmQuest) {
             val osmArgs = AbstractOsmQuestForm.createArguments(element!!)
             f.requireArguments().putAll(osmArgs)
-
-            showInBottomSheet(f)
-        } else {
-            showInBottomSheet(f)
         }
 
-        mapFragment.startFocus(quest.geometry, mapOffsetWithOpenBottomSheet)
+        showInBottomSheet(f)
+
+        mapFragment.startFocus(quest.geometry, getQuestFormInsets())
         mapFragment.highlightGeometry(quest.geometry)
         mapFragment.highlightPins(quest.type.icon, quest.markerLocations)
-        mapFragment.hideNonHighlightedPins()
+        mapFragment.hideNonHighlightedPins(quest.key)
         mapFragment.hideOverlay()
 
         viewLifecycleScope.launch(Dispatchers.IO) {
             val markers = mergeMarkersAtSamePosition(highlightedElementMarkers.await(), otherQuestMarkers.await())
-            markers.forEach { mapFragment.putMarkerForCurrentHighlighting(it.geometry, it.drawableResId, it.title, it.color) }
+            mapFragment.putMarkersForCurrentHighlighting(markers)
         }
     }
 
@@ -1630,7 +1611,6 @@ class MainFragment :
             else -> return emptyList()
         }
         var mapData: MapDataWithGeometry? = null
-        val markers = mutableListOf<Marker>()
 
         fun getMapData(): MapDataWithGeometry {
             val data = mapDataWithEditsSource.getMapDataWithGeometry(bbox)
@@ -1653,21 +1633,20 @@ class MainFragment :
         if (elements == emptySequence<Element>()) return emptyList()
         val levels = element?.let { parseLevelsOrNull(it.tags) }
         val localLanguages = ConfigurationCompat.getLocales(resources.configuration).toList().map { it.language }
-        for (e in elements) {
+        return elements.mapNotNull { e ->
             // don't highlight "this" element
-            if (element == e) continue
+            if (element == e) return@mapNotNull null
             // include only elements with the same (=intersecting) level, if any
             val eLevels = parseLevelsOrNull(e.tags)
-            if (!levels.levelsIntersect(eLevels)) continue
+            if (!levels.levelsIntersect(eLevels)) return@mapNotNull null
             // include only elements with the same layer, if any (except for bridges)
-            if (element?.tags?.get("layer") != e.tags["layer"] && e.tags["bridge"] == null) continue
+            if (element?.tags?.get("layer") != e.tags["layer"] && e.tags["bridge"] == null) return@mapNotNull null
 
-            val geometry = mapData?.getGeometry(e.type, e.id) ?: continue
-            val icon = getPinIcon(featureDictionary.value, e)
+            val geometry = mapData?.getGeometry(e.type, e.id) ?: return@mapNotNull null
+            val icon = getIcon(featureDictionary.value, e)
             val title = getTitle(e.tags, localLanguages)
-            markers.add(Marker(geometry, icon, title))
-        }
-        return markers
+            Marker(geometry, icon, title)
+        }.toList()
     }
 
     private fun showOtherQuests(quest: Quest): List<Marker> {
@@ -1675,7 +1654,7 @@ class MainFragment :
 
         // Quests should be grouped by element key, so non-OsmQuests need some kind of fake key
         fun Quest.thatKey() = if (this is OsmQuest) ElementKey(elementType, elementId)
-            else ElementKey(ElementType.values()[abs(key.hashCode() % 3)], -abs(7 * key.hashCode()).toLong())
+            else ElementKey(ElementType.entries[abs(key.hashCode() % 3)], -abs(7 * key.hashCode()).toLong())
 
         val markers = mutableListOf<Marker>()
 
@@ -1732,6 +1711,17 @@ class MainFragment :
     private fun isQuestDetailsCurrentlyDisplayedFor(questKey: QuestKey): Boolean {
         val f = bottomSheetFragment
         return f is IsShowingQuestDetails && f.questKey == questKey
+    }
+
+    private fun getCrosshairPoint(): PointF? {
+        val view = view ?: return null
+        val left = resources.getDimensionPixelSize(R.dimen.quest_form_leftOffset)
+        val right = resources.getDimensionPixelSize(R.dimen.quest_form_rightOffset)
+        val top = resources.getDimensionPixelSize(R.dimen.quest_form_topOffset)
+        val bottom = resources.getDimensionPixelSize(R.dimen.quest_form_bottomOffset)
+        val x = (view.width + left - right) / 2f
+        val y = (view.height + top - bottom) / 2f
+        return PointF(x, y)
     }
 
     //endregion
@@ -1797,10 +1787,10 @@ class MainFragment :
 
     fun getCameraPosition(): CameraPosition? = mapFragment?.cameraPosition
 
-    fun setCameraPosition(position: LatLon, zoom: Float) {
+    fun setCameraPosition(position: LatLon, zoom: Double) {
         mapFragment?.isFollowingPosition = false
         mapFragment?.isNavigationMode = false
-        mapFragment?.setInitialCameraPosition(CameraPosition(position, 0f, 0f, zoom))
+        mapFragment?.setInitialCameraPosition(CameraPosition(position, 0.0, 0.0, zoom))
         setIsFollowingPosition(false)
     }
 

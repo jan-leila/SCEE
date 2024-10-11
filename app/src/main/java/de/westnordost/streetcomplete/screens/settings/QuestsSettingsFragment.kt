@@ -7,12 +7,14 @@ import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
@@ -23,6 +25,7 @@ import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.StreetCompleteApplication
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestController
+import de.westnordost.streetcomplete.data.preferences.ResurveyIntervalsUpdater
 import de.westnordost.streetcomplete.data.visiblequests.DayNightQuestFilter
 import de.westnordost.streetcomplete.data.visiblequests.QuestTypeOrderController
 import de.westnordost.streetcomplete.data.visiblequests.VisibleQuestTypeController
@@ -30,6 +33,7 @@ import de.westnordost.streetcomplete.screens.HasTitle
 import de.westnordost.streetcomplete.util.dialogs.setViewWithDefaultPadding
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.hasPermission
+import de.westnordost.streetcomplete.util.ktx.setUpToolbarTitleAndIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
@@ -46,6 +50,13 @@ class QuestsSettingsFragment :
     private val questTypeOrderController: QuestTypeOrderController by inject()
 
     override val title: String get() = getString(R.string.pref_screen_quests)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.rootView.findViewById<Toolbar>(R.id.toolbar)?.apply {
+            setUpToolbarTitleAndIcon(this)
+        }
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         PreferenceManager.setDefaultValues(requireContext(), R.xml.preferences_ee_quests, false)

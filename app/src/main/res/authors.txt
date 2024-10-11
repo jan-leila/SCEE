@@ -43,10 +43,12 @@ bench_stone.jpg                CC-BY-SA 3.0      Andrew Butko https://commons.wi
 
 bicycle_parking_type_buildi... CC-BY-SA 3.0      Visitor7 https://commons.wikimedia.org/wiki/File:Bike_Storage_(YAUS).jpg
 bicycle_parking_type_locker... CC-BY-SA 3.0      Rept0n1x https://commons.wikimedia.org/wiki/File:Bicycle_lockers_at_Gathurst_railway_station.JPG
+bicycle_parking_type_safel...  CC0 1.0           RogerWiki https://commons.wikimedia.org/wiki/File:Fahrradst%C3%A4nder_mit_Anlehnb%C3%BCgel_2.jpg
 bicycle_parking_type_shed.jpg  CC-BY-SA 3.0      Tabl-trai https://commons.wikimedia.org/wiki/File:Parking_v%C3%A9los_s%C3%A9curis%C3%A9_gare_des_Martres_2015-08-20.JPG
 bicycle_parking_type_stand.jpg CC0               Mateusz Konieczny https://commons.wikimedia.org/wiki/File:Bicycle_parking_stand_2.jpg
 bicycle_parking_type_wheelb... CC-BY-SA 4.0      Joxemai https://commons.wikimedia.org/wiki/File:Bizikletak_lotzekoa.JPG
 bicycle_parking_type_handle... CC-BY-SA 4.0      Hiddewie https://commons.wikimedia.org/wiki/File:Bicycle_parking_handlebar_holder.jpg
+bicycle_parking_type_saddle... CC-BY-SA 4.0      mcliquid https://commons.wikimedia.org/wiki/File:Fahrradparkplatz_Sattelhalter_1.jpg
 bicycle_parking_type_two_ti... CC0               Bukk https://commons.wikimedia.org/wiki/File:Double_stack_bike_stand.jpg
 bicycle_parking_type_floor     CC0               Nakaner https://wiki.openstreetmap.org/wiki/File:Fahrradparkplatz_mit_Schild_und_ohne_Buegel.jpg
 
@@ -66,6 +68,21 @@ bollard_rising.jpg             CC-BY-SA 4.0      Stolbovsky https://commons.wiki
 car_wash_automated.jpg         CC-BY-SA 3.0      Michiel1972 https://commons.wikimedia.org/wiki/File:Carwas.jpg
 car_wash_self_service.jpg      CC-BY-SA 4.0      Jacek Halicki https://commons.wikimedia.org/wiki/File:2015_K%C5%82odzko,_ul._Dusznicka,_myjnia_samochodowa_02.jpg
 car_wash_service.jpg           Public Domain     https://commons.wikimedia.org/wiki/File:US_Navy_110831-N-NT881-079_Sailors_assigned_to_the_guided-missile_submarine_USS_Ohio_(SSGN_726)_and_Navy_Operational_Support_Center_Cincinnati_part.jpg
+
+crossing_markings_no.jpg       CC0               https://wiki.openstreetmap.org/wiki/File:Crossing_without_markings.png (StenSoft)
+crossing_markings_zebra.jpg    CC0               https://wiki.openstreetmap.org/wiki/File:Markings_zebra.png (Popbal)
+crossing_markings_lines.jpg    CC0               https://wiki.openstreetmap.org/wiki/File:Markings_lines.png (Popball)
+crossing_markings_ladder.jpg   CC0               https://wiki.openstreetmap.org/wiki/File:Markings_ladder.png (Popball)
+crossing_markings_dashes.jpg   CC0               https://wiki.openstreetmap.org/wiki/File:Markings_dashes.png (Popball)
+crossing_markings_dots.jpg     CC0               https://wiki.openstreetmap.org/wiki/File:Markings_dots.png (Popball)
+crossing_markings_surface.jpg  CC0               https://wiki.openstreetmap.org/wiki/File:Surface_crossing_markings.png (Popball)
+crossing_markings_ladder_skew… CC0               https://wiki.openstreetmap.org/wiki/File:Markings_adder_skewed.png (Popball)
+crossing_markings_zebra_paire… CC0               https://wiki.openstreetmap.org/wiki/File:Markings_adder_skewed.png (Popball)
+crossing_markings_zebra_bicol… CC0               https://wiki.openstreetmap.org/wiki/File:Markings_zebra_bicolour.png (Popball)
+crossing_markings_zebra_doubl… CC0               https://wiki.openstreetmap.org/wiki/File:Crossing_markings_zebra_double.png (Popball)
+crossing_markings_ladder_pair… CC0               https://wiki.openstreetmap.org/wiki/File:Paired_ladder.png (Popball)
+crossing_markings_zebra_dots.… CC0               Alexis Lecanu
+crossing_markings_pictograms.… CC0               https://wiki.openstreetmap.org/wiki/File:400px-Crossing_markings_pictogram.png (Kaligrafy)
 
 drinking_water_type_jet_water… CC-BY-SA 3.0      crop of image by Sulfur https://commons.wikimedia.org/wiki/File:Bubbler.jpg
 drinking_water_type_generic... CC-BY-SA 4.0      crop of image by Basotxerri https://commons.wikimedia.org/wiki/File:Bielerh%C3%B6he_-_Barbarakapelle_-_Brunnen_01.jpg
@@ -135,6 +152,8 @@ ic_preset_iD-*                 ISC license       from https://github.com/openstr
 ic_preset_maki-*               CC0-1.0           from https://github.com/mapbox/maki/tree/main/icons
 
 ic_preset_temaki-*             CC0 1.0           from https://github.com/ideditor/temaki/tree/main/icons
+
+ic_quest_sac_scale.svg         CC-BY 4.0         Delesign Graphics https://iconscout.com/free-illustration/man-climbing-on-mountain-2061832
 
 kerb_height_raised.jpg         CC0               Mateusz Konieczny (see res/graphics/kerbs/kerb_height_raised_original.jpg)
 kerb_height_lowered.jpg        CC0               Mateusz Konieczny (see res/graphics/kerbs/kerb_height_lowered_original.jpg)
@@ -230,6 +249,13 @@ ramp_bicycle.jpg               CC0               Mateusz Konieczny
 recycling_centre.jpg           Public Domain     https://commons.wikimedia.org/wiki/File:Forklift_carrying_bail_of_cardboard_for_recycling,_under_a_giant_sign_of_recycling_center.JPG
 recycling_container.jpg        CC0               https://commons.wikimedia.org/wiki/File:Vitoria_-_Contenedores_de_reciclaje_en_la_Avenida_de_Gasteiz.jpg
 recycling_container_undergr... CC0               https://commons.wikimedia.org/wiki/File:San_Fernando_de_Henares_-_reciclaje_de_residuos_urbanos_04.JPG
+
+sac_scale_t1.jpg                CC-BY-SA 4.0     https://wiki.openstreetmap.org/wiki/File:SAC_SCALE_T1.jpg (Marco Volken)
+sac_scale_t2.jpg                CC-BY-SA 4.0     https://wiki.openstreetmap.org/wiki/File:SAC_SCALE_T2.jpg (Marco Volken)
+sac_scale_t3.jpg                CC-BY-SA 4.0     https://wiki.openstreetmap.org/wiki/File:SAC_SCALE_T3.jpg (Marco Volken)
+sac_scale_t4.jpg                CC-BY-SA 4.0     https://wiki.openstreetmap.org/wiki/File:SAC_SCALE_T4.jpg (Marco Volken)
+sac_scale_t5.jpg                CC-BY-SA 4.0     https://wiki.openstreetmap.org/wiki/File:SAC_SCALE_T5.jpg (Marco Volken)
+sac_scale_t6.jpg                CC-BY-SA 4.0     https://wiki.openstreetmap.org/wiki/File:SAC_SCALE_T6.jpg (Marco Volken)
 
 shelter_type_public_transpor…  CC-BY 2.0         Janusz Jakubowski https://commons.wikimedia.org/wiki/File:Bus_shelter_in_Warsaw_(25843621920).jpg
 shelter_type_picnic_shelter.…  CC-BY-SA 3.0      B.navez https://wiki.openstreetmap.org/wiki/File:R%C3%A9union_Ma%C3%AFdo_kiosque_pique-nique.JPG
@@ -332,6 +358,12 @@ tourism_information_map.jpg    CC0               https://commons.wikimedia.org/w
 tourism_information_office.jpg CC-BY-SA 4.0      https://commons.wikimedia.org/wiki/File:Tourist_information_shop,_Delft_(2018).jpg (Donald Trung)
 tourism_information_termina... CC-BY 4.0         https://wiki.openstreetmap.org/wiki/File:Uh%C5%99%C3%ADn%C4%9Bves,_Nov%C3%A9_n%C3%A1m%C4%9Bst%C3%AD,_informa%C4%8Dn%C3%AD_stojan.jpg (ŠJů)
 
+valves_schrader.jpg            Free Art License BohwaZ https://commons.wikimedia.org/wiki/File:Valve_Schrader.jpg
+valves_sclaverand.jpg          Free Art License BohwaZ https://commons.wikimedia.org/wiki/File:Valve_Presta.JPG
+valves_dunlop.jpg              Free Art License BohwaZ https://commons.wikimedia.org/wiki/File:Valve_Dunlop.JPG
+valves_regina.jpg              Free Art License BohwaZ https://commons.wikimedia.org/wiki/File:Valve_Regina_avec_son_bouchon.jpg
+
+
 via_ferrata_scale_0.jpg        CC-BY-SA-2.0      https://wiki.openstreetmap.org/wiki/File:Super_easy_ferrata.jpg
 via_ferrata_scale_1.jpg        CC-BY-SA-3.0      https://wiki.openstreetmap.org/wiki/File:Alpspitz-ferrata-a.jpg
 via_ferrata_scale_2.jpg        CC-BY-SA-2.0      https://wiki.openstreetmap.org/wiki/File:Alpspitz-ferrata-b.jpg
@@ -344,6 +376,7 @@ vibrating_button_illustrati... CC-BY 4.0         Tobias Zwick
 vibrating_button_i... (MCC234) CC0               CJ Malone
 vibrating_button_i... (MCC505) CC0               https://commons.wikimedia.org/wiki/File:An_Australian_pedestrian_crossing_button.jpg (James Cridland)
 
+informal_crossing.jpg          CC-SA 2.0         https://wiki.openstreetmap.org/wiki/File:West_Highland_Way_crossing_road_-_geograph.org.uk_-_3986498_(cropped).jpg
 ic_quest_tree.xml              Public Domain     https://commons.wikimedia.org/wiki/File:Broccoli-tree.svg (Dvortygirl)
 ic_quest_website.xml           Public Domain     https://commons.wikimedia.org/wiki/File:Web_(89510)_-_The_Noun_Project.svg
 

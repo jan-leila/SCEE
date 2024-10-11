@@ -1,8 +1,7 @@
 package de.westnordost.streetcomplete.data.osmnotes.notequests
 
-import com.russhwolf.settings.ObservableSettings
-import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.data.osmnotes.edits.NotesWithEditsSource
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.user.User
 import de.westnordost.streetcomplete.data.user.UserDataSource
 import de.westnordost.streetcomplete.data.user.UserLoginSource
@@ -12,6 +11,7 @@ import de.westnordost.streetcomplete.testutils.bbox
 import de.westnordost.streetcomplete.testutils.comment
 import de.westnordost.streetcomplete.testutils.eq
 import de.westnordost.streetcomplete.testutils.mock
+import de.westnordost.streetcomplete.testutils.mockPrefs3
 import de.westnordost.streetcomplete.testutils.note
 import de.westnordost.streetcomplete.testutils.on
 import de.westnordost.streetcomplete.testutils.p
@@ -29,7 +29,7 @@ class OsmNoteQuestControllerTest {
     private lateinit var hiddenDB: NoteQuestsHiddenDao
     private lateinit var userDataSource: UserDataSource
     private lateinit var userLoginSource: UserLoginSource
-    private lateinit var prefs: ObservableSettings
+    private lateinit var prefs: Preferences
 
     private lateinit var ctrl: OsmNoteQuestController
     private lateinit var listener: OsmNoteQuestSource.Listener
@@ -43,7 +43,7 @@ class OsmNoteQuestControllerTest {
         hiddenDB = mock()
         userDataSource = mock()
         userLoginSource = mock()
-        prefs = mock()
+        prefs = mockPrefs3()
 
         listener = mock()
         hideListener = mock()
@@ -87,7 +87,7 @@ class OsmNoteQuestControllerTest {
         on(hiddenDB.getTimestamp(1)).thenReturn(ts)
         on(noteSource.get(1)).thenReturn(note)
         on(hiddenDB.delete(1)).thenReturn(true)
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(true)
+        on(prefs.showAllNotes).thenReturn(true)
 
         ctrl.unhide(1)
 
@@ -106,7 +106,7 @@ class OsmNoteQuestControllerTest {
 
         on(hiddenDB.getAllIds()).thenReturn(hiddenNoteIds)
         on(noteSource.getAll(hiddenNoteIds)).thenReturn(hiddenNotes)
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(true)
+        on(prefs.showAllNotes).thenReturn(true)
 
         ctrl.unhideAll()
 
@@ -180,7 +180,7 @@ class OsmNoteQuestControllerTest {
         on(noteSource.get(1)).thenReturn(note(comments = listOf(
             comment(text = "test")
         )))
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(false)
+        on(prefs.showAllNotes).thenReturn(false)
 
         assertNull(ctrl.getVisible(1))
     }
@@ -191,7 +191,7 @@ class OsmNoteQuestControllerTest {
             position = p(1.0, 1.0),
             comments = listOf(comment(text = "test?"))
         ))
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(false)
+        on(prefs.showAllNotes).thenReturn(false)
 
         assertEquals(OsmNoteQuest(1, p(1.0, 1.0)), ctrl.getVisible(1))
     }
@@ -204,7 +204,7 @@ class OsmNoteQuestControllerTest {
         on(noteSource.get(5)).thenReturn(note(5, comments = listOf(comment(text = "Ethiopian question mark: ፧"))))
         on(noteSource.get(6)).thenReturn(note(6, comments = listOf(comment(text = "Vai question mark: ꘏"))))
         on(noteSource.get(7)).thenReturn(note(7, comments = listOf(comment(text = "full width question mark: ？"))))
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(false)
+        on(prefs.showAllNotes).thenReturn(false)
 
         assertEquals(1, ctrl.getVisible(1)?.id)
         assertEquals(2, ctrl.getVisible(2)?.id)
@@ -221,7 +221,7 @@ class OsmNoteQuestControllerTest {
             position = p(1.0, 1.0),
             comments = listOf(comment(text = "test #surveyme"))
         ))
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(false)
+        on(prefs.showAllNotes).thenReturn(false)
 
         assertEquals(OsmNoteQuest(1, p(1.0, 1.0)), ctrl.getVisible(1))
     }
@@ -232,7 +232,7 @@ class OsmNoteQuestControllerTest {
             position = p(1.0, 1.0),
             comments = listOf(comment(text = "test"))
         ))
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(true)
+        on(prefs.showAllNotes).thenReturn(true)
 
         assertEquals(OsmNoteQuest(1, p(1.0, 1.0)), ctrl.getVisible(1))
     }
@@ -245,7 +245,7 @@ class OsmNoteQuestControllerTest {
 
         on(hiddenDB.getAllIds()).thenReturn(emptyList())
         on(noteSource.getAll(bbox)).thenReturn(notes)
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(true)
+        on(prefs.showAllNotes).thenReturn(true)
 
         val expectedQuests = notes.map { OsmNoteQuest(it.id, it.position) }
 
@@ -274,7 +274,7 @@ class OsmNoteQuestControllerTest {
         // note 5 is deleted
 
         on(hiddenDB.getAllIds()).thenReturn(listOf(2, 4))
-        on(prefs.getBoolean(Prefs.SHOW_NOTES_NOT_PHRASED_AS_QUESTIONS, false)).thenReturn(true)
+        on(prefs.showAllNotes).thenReturn(true)
 
         noteUpdatesListener.onUpdated(
             added = listOf(

@@ -26,7 +26,6 @@
     <string name="pref_way_direction">Показати напрямок ліній</string>
     <string name="pref_quest_geometries_title">Відображати геометрію квесту</string>
     <string name="pref_quest_geometries_summary">Виділити шляхи та зони, де є квести</string>
-    <string name="pref_offset_fix_title">Видалити зміщення маркерів квесту</string>
     <string name="pref_show_solved_animation">Показувати анімацію після розв\'язання квесту</string>
     <string name="pref_show_solved_animation_summary">Це також керує звуком під час виконання квесту</string>
     <string name="pref_gpx_track_title">Відображення GPX-треку з файлу</string>
@@ -49,7 +48,6 @@
     <string name="pref_screen_display">Відображати</string>
     <string name="pref_way_direction_summary">Відображати стрілки на виділених лініях при відкритті квесту. Корисно, наприклад, при додаванні односторонніх шляхів.</string>
     <string name="pref_offset_fix_summary">Вони існують для того, щоб білі крапки були приховані значками квестів</string>
-    <string name="pref_gpx_track_download_too_big">Занадто велика область завантаження, будь ласка, завантажте вручну</string>
     <string name="pref_caps_word_name_input">При введенні назв усі слова писати з великої літери</string>
     <string name="pref_show_nearby_quests_summary">Дозволяє перемикатися між сусідніми квестами, коли показано форму квесту</string>
     <string name="quick_switch_preset">Перемикач заготовок</string>
@@ -78,16 +76,11 @@
     <string name="pref_quest_monitor_title">Сповіщати про квести поблизу</string>
     <string name="pref_quest_monitor_summary">Відстежує місцезнаходження, коли програма перебуває у фоновому режимі, за винятком випадків, коли її вимкнено за допомогою кнопки «Назад»</string>
     <string name="quest_monitor_permission_warning">Для відстеження квестів поблизу потрібен дозвіл на визачення місцезнаходження у фоні</string>
-    <string name="delete_cache_dialog_message2">Видалити всі завантажені дані мапи, включно з квестами\?
-\nДані оновлюються через %1$s днів, а невикористані дані автоматично видаляються через %2$s днів.
-\nВиберіть, які дані видалити.</string>
-    <string name="delete_confirmation_tiles">Плитки мапи</string>
     <string name="day_night_priority">Підвищити пріоритет квестів, придатних для поточного часу доби</string>
     <string name="day_night_visibility">Не показувати квести, які не підходять для поточного часу доби</string>
     <string name="pref_quest_settings_preset_title">Попередньо встановлені налаштування квесту</string>
     <string name="level_filter">Фільтр рівня</string>
     <string name="quest_order_reverse">Зворотний порядок квестів</string>
-    <string name="pref_use_sd_summary">Зміна цього параметра призведе до переміщення даних, що може зайняти деякий час</string>
     <string name="tree_custom_quest_import_export_message">Отримати поточний файл або надати новий\? Перевірте відповідне повідомлення про увімкнення квесту для отримання детальної інформації.</string>
     <string name="tree_custom_quest_export">Отримати</string>
     <string name="pref_tree_custom_quest_summary">Детальніше див. у повідомленні при ввімкненні квесту</string>
@@ -101,8 +94,6 @@
     <string name="pref_delete_old_data_after">Видалити старі дані після</string>
     <string name="pref_delete_old_data_after_message">Видаліть завантажені дані OSM, якщо вони старіші за вказану кількість днів</string>
     <string name="pref_delete_old_data_after_summary">%d днів</string>
-    <string name="pref_use_sd">Використовуйте зовнішню SD-карту для зберігання тайлів мапи</string>
-    <string name="moving">Переміщення тайлів…</string>
     <string name="pref_custom_title">Завантажити власний файл квесту</string>
     <string name="pref_tile_source_title">Джерело тайлів для супутникових / аерофотознімків</string>
     <string name="pref_tile_source_message">URL-адреса тайлу повинна містити {x}, {y} та {z}</string>
@@ -143,8 +134,6 @@
     <string name="import_export_presets_select">Виберіть заготовки для експорту</string>
     <string name="quest_monitor_search_radius_text">Встановити радіус пошуку квестів поблизу. Зауважте, що квести з дещо більшою відстанню також можуть бути знайдені. Локації з точністю нижче цього значення ігноруються.</string>
     <string name="quest_monitor_active_request">Активний запит місцезнаходжень збільшує витрату заряду акумулятора. Якщо ви не запитуєте місця розташування активно, місця розташування, запитані іншими програмами, все одно будуть використовуватися.</string>
-    <string name="delete_confirmation_data">Дані OSM та квестів</string>
-    <string name="delete_confirmation_both">Обидва</string>
     <string name="restore_dialog_hint">Ви також можете вручну вибрати, які квести відновити, затиснувши кнопку скасування.</string>
     <string name="quest_settings_reset">Скидання</string>
     <string name="quest_settings_element_selection">Встановіть елементи, що підходять для цього квесту.<a href="https://github.com/Helium314/SCEE/blob/modified/CONTRIBUTING_A_NEW_QUEST.md#element-selection">Натисніть тут</a>, щоб відкрити інформацію про синтаксис виділення елементів у браузері.</string>
@@ -159,21 +148,21 @@
     <string name="quest_settings_osmose_level_title">Виберіть рівень важливості проблеми для завантаження та відображення</string>
     <string name="quest_settings_osmose_level_medium">Середній</string>
     <string name="quest_settings_fixme_title">Виберіть значення «Виправити» для ігнорування</string>
-    <string name="pref_expert_mode_message">Це дозволить використовувати квести, додані у SCEE, та способи 
-\n <li>редагування необроблених тегів</li> 
-\n <li>переміщення точок, які є частиною ліній або відношень</li> 
-\n <li>видалення будь-якої вільно плаваючої точки</li> 
-\n <li>редагування елементів, які мають бути заблоковані приміткою</li> 
-\n <li>додавання вільно плаваючих точок у будь-якому місці</li> 
-\n <li>зміна вибору елементів квестів</li> 
-\n 
-\n Це все ще менше, ніж дозволяє більшість інших редакторів, але необережне використання може призвести до пошкодження даних у спосіб, який неможливий у StreetComplete. Майте на увазі, що увімкнувши експертний режим, ви несете значно більшу відповідальність за свої правки. 
+    <string name="pref_expert_mode_message">Це дозволить використовувати квести, додані у SCEE, та способи
+\n <li>редагування необроблених тегів</li>
+\n <li>переміщення точок, які є частиною ліній або відношень</li>
+\n <li>видалення будь-якої вільно плаваючої точки</li>
+\n <li>редагування елементів, які мають бути заблоковані приміткою</li>
+\n <li>додавання вільно плаваючих точок у будь-якому місці</li>
+\n <li>зміна вибору елементів квестів</li>
+\n
+\n Це все ще менше, ніж дозволяє більшість інших редакторів, але необережне використання може призвести до пошкодження даних у спосіб, який неможливий у StreetComplete. Майте на увазі, що увімкнувши експертний режим, ви несете значно більшу відповідальність за свої правки.
 \n Будь ласка, вмикайте цей параметр лише якщо ви маєте досвід роботи з OSM поза StreetComplete і розумієте, що ви робите. \u0020</string>
     <string name="quest_osmose_settings_items">Змінити типи елементів для ігнорування</string>
     <string name="quest_settings_building_levels_optional_roof">Дозволяти не використовувати рівні даху скрізь</string>
     <string name="quest_settings_resurvey_all_opening_hours_yes">Усі</string>
     <string name="quest_settings_resurvey_all_opening_hours_no">За замовчуванням</string>
-    <string name="quest_custom_quest_title">Свій квест: %s</string>
+    <string name="quest_custom_quest_title">Свій квест:</string>
     <string name="quest_settings_resurvey_all_opening_hours_message">Повторно переглянути всі години роботи, включно зі значеннями, які не розуміє SCEE\? Можливо, вам доведеться скористатися редактором тегів, щоб ввести правильні значення.</string>
     <string name="quest_osmose_false_positive">Повідомити про хибне спрацювання</string>
     <string name="quest_osmose_message_for_element">Тип елементу %1$s: %2$s</string>
@@ -198,7 +187,7 @@
     <string name="pref_screen_ui">Інтерфейс</string>
     <string name="quest_settings_highlight_changes_button">Виділити зміни</string>
     <string name="quest_order_normal">Звичайний порядок квестів</string>
-    <string name="quest_osmose_title">Квест з Osmose: %s</string>
+    <string name="quest_osmose_title">Квест з Osmose:</string>
     <string name="quest_osmose_message">Ці квести завантажуються з сервісу Osmose і вказують на потенційні проблеми з даними OSM. Завантаження відбувається тільки якщо в налаштуваннях квесту вибрано хоча б один рівень важливості.
 \n Повідомлення Osmose відображається разом із квестом, будь-яке редагування повідомляє про проблему як вирішену.
 \n Також можна повідомити про проблему як про хибнопозитивну; це не можна скасувати.</string>
@@ -216,7 +205,7 @@
     <string name="restriction_overlay_other_restrictions">Інші обмеження цього шляху:</string>
     <string name="add_access">Додати доступ…</string>
     <string name="quest_benchMaterial_metal">Метал</string>
-    <string name="quest_poi_recycling_title">POI: Переробка відходів %s</string>
+    <string name="quest_poi_recycling_title">POI: Переробка відходів</string>
     <string name="quest_custom_quest_message">Використовується для перевірки певних заздалегідь визначених елементів або місць. Ви також можете вказати теги і додати точку з ними. Для використання завантажте файл у головному меню налаштувань, що містить або type,id,message (наприклад, NODE,1234,check position), або latitude,longitude,message. Для додавання точок, додайте теги у повідомлення після «addNode», наприклад, addNode amenity=restaurant,wheelchair=no,diet:vegetarian=yes</string>
     <string name="quest_benchMaterial_concrete">Бетон</string>
     <string name="quest_benchMaterial_plastic">Пластик</string>
@@ -232,7 +221,7 @@
     <string name="pref_disable_navigation_mode_summary">Вимкнути режим нахилу та автоматичного повороту мапи</string>
     <string name="quest_poi_seating_title">POI: Місця для сидіння</string>
     <string name="quest_poi_misc_title">POI: Різне</string>
-    <string name="quest_poi_vending_title">POI: Торгові точки %s</string>
+    <string name="quest_poi_vending_title">POI: Торгові точки</string>
     <string name="quest_benchMaterial_title">З чого це зроблено\?</string>
     <string name="quest_poi_cycling_title">POI: Велосипед</string>
     <string name="default_disabled_msg_poi_camera">У цьому «квесті» системи спостереження позначені рожевими крапками. Натисніть на крапку, щоб побачити деталі та інші відповіді.</string>
@@ -280,12 +269,12 @@
     <string name="create_custom_quest_button">Створити свій квест</string>
     <string name="fork_about_title_repository">Сторінка проєкту SCEE</string>
     <string name="quest_artwork_installation">Інсталяція</string>
-    <string name="quest_fixme_title">Виправити: %1$s</string>
+    <string name="quest_fixme_title">Виправити:</string>
     <string name="quest_service_building_operator_title">Якій організації належить ця службова будівля\?</string>
     <string name="quest_wheelchair_description_answer">Додати опис</string>
     <string name="quest_artwork_statue">Статуя</string>
     <string name="restriction_overlay_sign_stop">Стоп</string>
-    <string name="quest_poi_traffic_title">POI: Дорожній рух %s</string>
+    <string name="quest_poi_traffic_title">POI: Дорожній рух</string>
     <string name="quest_healthcare_speciality_switch_ui">Перемкнути інтерфейс</string>
     <string name="quest_wheelchair_description_no_language">мову не вказано</string>
     <string name="quest_seating_beach">На пляжі</string>
@@ -294,9 +283,9 @@
     <string name="hide_button">Приховати</string>
     <string name="quest_artwork_stone">Камінь</string>
     <string name="quest_artwork_bust">Погруддя</string>
-    <string name="quest_seating_veranda">На веранді/ґанку</string>
+    <string name="quest_seating_veranda">На веранді/ґанку (крита, може бути трохи над землею)</string>
     <string name="quest_artwork_fountain">Фонтан</string>
-    <string name="quest_seating_terrace">На терасі</string>
+    <string name="quest_seating_terrace">На терасі (без даху, не внутрішній двір)</string>
     <string name="quest_artwork_architecture">Архітектура</string>
     <string name="restriction_overlay_sign_give_way">Дати дорогу</string>
     <string name="quest_monitor_found">%d квестів поблизу, найближче:</string>
@@ -306,13 +295,13 @@
     <string name="quest_construction_value">Вкажіть «construction=…» або залиште порожнім, якщо невідомо</string>
     <string name="quest_artwork_title">Що це за твір мистецтва\?</string>
     <string name="restriction_overlay_sign_stop_all_way">Рух без зупинки заборонено</string>
-    <string name="quest_service_building_type_title">Якого типу ця службова будівля %s\?</string>
+    <string name="quest_service_building_type_title">Якого типу ця службова будівля\?</string>
     <string name="quest_artwork_painting">Малюнок</string>
     <string name="quest_cuisine_title">Страви якої кухні пропонують у цьому закладі\? Використовуйте пропоновані теги OSM!</string>
     <string name="quest_artwork_mosaic">Мозаїка</string>
     <string name="quest_seating_pedestrian_zone">У пішохідній зоні</string>
-    <string name="quest_seating_balcony">На балконі</string>
-    <string name="quest_seating_patio">У дворику</string>
+    <string name="quest_seating_balcony">На балконі (не на першому поверсі)</string>
+    <string name="quest_seating_patio">У дворику (без даху, внутрішній двір)</string>
     <string name="restriction_overlay_remove_conditional_restrictions">Скинути умови</string>
     <string name="quest_artwork_sculpture">Скульптура</string>
     <string name="custom_overlay_delete">Справді видалити %s\?</string>
@@ -397,4 +386,11 @@
     <string name="close">Закрити</string>
     <string name="quest_guidepostEle_title">Яка тут висота над рівнем моря?</string>
     <string name="quest_guidepostEle_hint">Не використовуйте дані про висоту за GPS, оскільки вони, як правило, занадто неточні і не надаються в правильній системі відліку висоти.</string>
+    <string name="quest_maxheight_answer_noSign_question_yes">Високі вантажівки можуть проїхати</string>
+    <string name="quest_maxheight_answer_noSign_question">Чи достатньо місця для проїзду навіть найвищих вантажівок (від 4,5 метрів / 15 футів заввишки)?</string>
+    <string name="quest_maxheight_answer_noSign_question_unclear">Невідомо</string>
+    <string name="quest_maxheight_answer_noSign_question_no">Високі вантажівки не проїдуть</string>
+    <string name="action_all_quests">Показати всі квести</string>
+    <string name="quest_outdoor_seating_name_title">Які місця на вулиці є в цьому закладі?</string>
+    <string name="quest_saunaAvailability_title">Чи є тут сауна?</string>
 </resources>

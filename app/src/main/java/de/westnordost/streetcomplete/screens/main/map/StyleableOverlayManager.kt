@@ -1,12 +1,9 @@
 package de.westnordost.streetcomplete.screens.main.map
 
-import android.graphics.RectF
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import de.westnordost.streetcomplete.data.download.tiles.TilePos
 import de.westnordost.streetcomplete.data.download.tiles.TilesRect
 import de.westnordost.streetcomplete.data.download.tiles.enclosingTilesRect
-import de.westnordost.streetcomplete.data.download.tiles.minTileRect
 import de.westnordost.streetcomplete.data.osm.edits.MapDataWithEditsSource
 import de.westnordost.streetcomplete.data.osm.mapdata.BoundingBox
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementKey
@@ -20,7 +17,7 @@ import de.westnordost.streetcomplete.overlays.Overlay
 import de.westnordost.streetcomplete.overlays.restriction.RestrictionOverlay
 import de.westnordost.streetcomplete.screens.main.map.components.StyleableOverlayMapComponent
 import de.westnordost.streetcomplete.screens.main.map.components.StyledElement
-import de.westnordost.streetcomplete.screens.main.map.tangram.KtMapController
+import de.westnordost.streetcomplete.screens.main.map.maplibre.screenAreaToBoundingBox
 import de.westnordost.streetcomplete.util.math.intersect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,19 +25,17 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.withContext
+import org.maplibre.android.maps.MapLibreMap
 
 /** Manages the layer of styled map data in the map view:
  *  Gets told by the MainMapFragment when a new area is in view and independently pulls the map
  *  data for the bbox surrounding the area from database and holds it in memory. */
 class StyleableOverlayManager(
-    private val ctrl: KtMapController,
+    private val map: MapLibreMap,
     private val mapComponent: StyleableOverlayMapComponent,
     private val mapDataSource: MapDataWithEditsSource,
     private val selectedOverlaySource: SelectedOverlaySource,
@@ -49,10 +44,17 @@ class StyleableOverlayManager(
 
     // last displayed rect of (zoom 16) tiles
     private var lastDisplayedRect: TilesRect? = null
+    // map data in current view: key -> [pin, ...]
+    private val mapDataInView: MutableMap<ElementKey, StyledElement> = mutableMapOf()
+    private val mapDataInViewMutex = Mutex()
 
-    private val viewLifecycleScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val mapDataSourceMutex = Mutex()
+
+    private val viewLifecycleScope: CoroutineScope = CoroutineScope(SupervisorJob())
 
     private var updateJob: Job? = null
+
+    /* todo: either re-introduce this cache (if clear performance benefit), or kick it (if noticeable improvement, maybe do sth like that for SC?)
     private val m = Mutex()
 
     // cache recent queries in some sort of crappy chaotic spatial cache
@@ -120,17 +122,20 @@ class StyleableOverlayManager(
         if (cache.size > 16) cache.keys.remove(cache.keys.first())
         return data.values
     }
-
+*/
     private var overlay: Overlay? = null
         set(value) {
-            // always reload, even if the overlay is the same
+            if (field == value) return
             val wasNull = field == null
             val isNullNow = value == null
             field = value
             when {
                 isNullNow -> hide()
                 wasNull ->   show()
-                else ->      switchOverlay()
+                else ->      {
+                    clear()
+                    invalidate()
+                }
             }
         }
 
@@ -151,16 +156,15 @@ class StyleableOverlayManager(
                         // and reload if ways are updated, because without knowing the relation it will not be highlighted
                         && (updated.any { it is Relation || it.tags["highway"] in ALL_ROADS } || deleted.any { it.type == ElementType.RELATION })) {
                     lastDisplayedRect?.let {
-                        cache.clear()
-                        onNewTilesRect(it)
+                        //cache.clear() todo: remove when removing cache
+                        setStyledElements(it.asBoundingBox(TILES_ZOOM))
                     }
                 }
             }
         }
 
         override fun onReplacedForBBox(bbox: BoundingBox, mapDataWithGeometry: MapDataWithGeometry) {
-            clear()
-            onNewScreenPosition()
+            invalidate()
         }
 
         override fun onCleared() {
@@ -185,13 +189,13 @@ class StyleableOverlayManager(
     }
 
     private fun show() {
-        clear()
+        lastDisplayedRect = null
         onNewScreenPosition()
         mapDataSource.addListener(mapDataListener)
     }
 
-    private fun switchOverlay() {
-        clear()
+    private fun invalidate() {
+        lastDisplayedRect = null
         onNewScreenPosition()
     }
 
@@ -203,72 +207,86 @@ class StyleableOverlayManager(
 
     fun onNewScreenPosition() {
         if (overlay == null) return
-        val zoom = ctrl.cameraPosition.zoom
-        if (zoom < TILES_ZOOM) return
-        val displayedArea = ctrl.screenAreaToBoundingBox(RectF()) ?: return
-        val tilesRect = displayedArea.enclosingTilesRect(TILES_ZOOM)
-        // area too big -> skip (performance)
-        if (tilesRect.size > 16) return
-        if (lastDisplayedRect?.contains(tilesRect) != true) {
-            lastDisplayedRect = tilesRect
-            onNewTilesRect(tilesRect)
-        }
+        viewLifecycleScope.launch { updateCurrentScreenArea() }
     }
 
-    private fun onNewTilesRect(tilesRect: TilesRect) {
+    private suspend fun updateCurrentScreenArea() {
+        val zoom = map.cameraPosition.zoom
+        if (zoom < TILES_ZOOM) return
+        val displayedArea = withContext(Dispatchers.Main) { map.screenAreaToBoundingBox() }
+        val tilesRect = displayedArea.enclosingTilesRect(TILES_ZOOM)
+        // area too big -> skip (performance)
+        if (tilesRect.size > 32) return
+        val isNewRect = lastDisplayedRect?.contains(tilesRect) != true
+        if (!isNewRect) return
+
+        lastDisplayedRect = tilesRect
+        // Check QuestPinsManager::updateCurrentScreenArea for an explanation what this updateJob
+        // stuff is about.
         updateJob?.cancel()
         updateJob = viewLifecycleScope.launch {
-            while (m.isLocked) { delay(50) }
-            if (!coroutineContext.isActive) return@launch
-            val data = m.withLock { getFromCache(tilesRect) }
-            if (!coroutineContext.isActive) return@launch
-            mapComponent.set(data)
-            ctrl.requestRender()
+            val bbox = tilesRect.asBoundingBox(TILES_ZOOM)
+            setStyledElements(bbox)
         }
     }
 
     private fun clear() {
-        runBlocking { m.withLock { cache.clear() } }
+        //runBlocking { m.withLock { cache.clear() } }
         lastDisplayedRect = null
-        viewLifecycleScope.launch { mapComponent.clear() }
+        viewLifecycleScope.launch {
+            mapDataInViewMutex.withLock { mapDataInView.clear() }
+            withContext(Dispatchers.Main) { mapComponent.clear() }
+        }
     }
 
-    private suspend fun updateStyledElements(updated: MapDataWithGeometry, deleted: Collection<ElementKey>) {
-        val overlay = overlay ?: return
-        val displayedBBox = lastDisplayedRect?.asBoundingBox(TILES_ZOOM)
-        var changedAnything = false
-        m.withLock {
-            val bboxes = cache.keys.associateWith { it.asBoundingBox(TILES_ZOOM) }
-            deleted.forEach { key ->
-                cache.values.forEach {
-                    if (it.remove(key) != null) changedAnything = true
-                }
-            }
-            val styledElementsByKey = HashMap<ElementKey, StyledElement>(updated.size, 1f)
-            createStyledElementsByKey(overlay, updated).forEach { styledElementsByKey[it.first] = it.second }
-            // for elements that used to be displayed in the overlay but now not anymore
-            updated.forEach { element ->
-                val key = element.key
-                if (!styledElementsByKey.containsKey(key)) {
-                    cache.values.forEach { if (it.remove(key) != null) changedAnything = true }
-                }
-            }
-            styledElementsByKey.forEach { (key, styledElement) ->
+    private suspend fun setStyledElements(bbox: BoundingBox) {
+        val mapData = mapDataSourceMutex.withLock {
+            withContext(Dispatchers.IO) { mapDataSource.getMapDataWithGeometry(bbox) }
+        }
+        val styledElements = mapDataInViewMutex.withLock {
+            val overlay = overlay ?: return
+            mapDataInView.clear()
+            createStyledElementsByKey(overlay, mapData).forEach { (key, styledElement) ->
                 if (!levelFilter.levelAllowed(styledElement.element)) return@forEach
-                cache.forEach {
-                    if (styledElement.geometry.getBounds().intersect(bboxes[it.key]!!))
-                        it.value[key] = styledElement
+                mapDataInView[key] = styledElement
+            }
+            mapDataInView.values.toList()
+        }
+        mapComponent.set(styledElements)
+    }
+
+    // todo: when using cache, this here was not called iirc
+    private suspend fun updateStyledElements(updated: MapDataWithGeometry, deleted: Collection<ElementKey>) {
+        val styledElements = mapDataInViewMutex.withLock {
+            val displayedBBox = lastDisplayedRect?.asBoundingBox(TILES_ZOOM) ?: return
+            var hasChanges = false
+            val overlay = overlay ?: return
+
+            deleted.forEach {
+                if (mapDataInView.remove(it) != null) hasChanges = true
+            }
+            val styledElementsByKey = createStyledElementsByKey(overlay, updated).toMap()
+            // elements that used to be displayed in the overlay but now not anymore
+            updated.forEach {
+                if (!styledElementsByKey.containsKey(it.key)) {
+                    if (mapDataInView.remove(it.key) != null) hasChanges = true
                 }
-                if (!changedAnything && displayedBBox?.intersect(styledElement.geometry.getBounds()) != false) {
-                    changedAnything = true
+            }
+            // elements that are either newly displayed or which were updated
+            styledElementsByKey.forEach { (key, styledElement) ->
+                if (displayedBBox.intersect(styledElement.geometry.getBounds()) && levelFilter.levelAllowed(styledElement.element)) {
+                    mapDataInView[key] = styledElement
+                    hasChanges = true
+                } else {
+                    if (mapDataInView.remove(key) != null) hasChanges = true
                 }
             }
 
-            if (changedAnything && coroutineContext.isActive) {
-                mapComponent.set(lastDisplayedRect?.let { getFromCache(it) } ?: cache.values.flatMap { it.values }.toHashSet())
-                ctrl.requestRender()
-            }
+            if (!hasChanges) return
+
+            mapDataInView.values.toList()
         }
+        mapComponent.set(styledElements)
     }
 
     private fun createStyledElementsByKey(

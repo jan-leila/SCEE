@@ -6,14 +6,14 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
-import android.os.Environment
+import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
-import androidx.core.app.ActivityCompat
+import androidx.appcompat.widget.Toolbar
 import androidx.core.content.edit
 import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
@@ -21,8 +21,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
-import com.russhwolf.settings.ObservableSettings
-import de.westnordost.streetcomplete.BuildConfig
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.StreetCompleteApplication
@@ -33,6 +31,7 @@ import de.westnordost.streetcomplete.data.externalsource.ExternalSourceQuestCont
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestsHiddenTable
 import de.westnordost.streetcomplete.data.osmnotes.notequests.NoteQuestsHiddenTable
 import de.westnordost.streetcomplete.data.externalsource.ExternalSourceQuestTables
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.urlconfig.UrlConfigController
 import de.westnordost.streetcomplete.data.visiblequests.QuestPreset
 import de.westnordost.streetcomplete.data.visiblequests.QuestPresetsController
@@ -46,23 +45,19 @@ import de.westnordost.streetcomplete.quests.custom.FILENAME_CUSTOM_QUEST
 import de.westnordost.streetcomplete.quests.osmose.OsmoseDao
 import de.westnordost.streetcomplete.quests.tree.FILENAME_TREES
 import de.westnordost.streetcomplete.screens.HasTitle
-import de.westnordost.streetcomplete.util.TempLogger
 import de.westnordost.streetcomplete.util.dialogs.setViewWithDefaultPadding
 import de.westnordost.streetcomplete.util.getFakeCustomOverlays
+import de.westnordost.streetcomplete.util.ktx.setUpToolbarTitleAndIcon
 import de.westnordost.streetcomplete.util.ktx.toast
-import de.westnordost.streetcomplete.util.logs.DatabaseLogger
 import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import java.io.BufferedWriter
 import java.io.File
 import java.io.IOException
-import kotlin.system.exitProcess
 
 class DataManagementSettingsFragment :
     PreferenceFragmentCompat(),
@@ -70,24 +65,27 @@ class DataManagementSettingsFragment :
     SharedPreferences.OnSharedPreferenceChangeListener {
 
     private val prefs = StreetCompleteApplication.preferences
-    private val scPrefs: ObservableSettings by inject()
+    private val scPrefs: Preferences by inject()
     private val db: Database by inject()
     private val visibleQuestTypeController: VisibleQuestTypeController by inject()
     private val cleaner: Cleaner by inject()
     private val urlConfigController: UrlConfigController by inject()
     private val questPresetsController: QuestPresetsController by inject()
-    private val databaseLogger: DatabaseLogger by inject()
     private val osmoseDao: OsmoseDao by inject()
     private val externalSourceQuestController: ExternalSourceQuestController by inject()
 
     override val title: String get() = getString(R.string.pref_screen_data_management)
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.rootView.findViewById<Toolbar>(R.id.toolbar)?.apply {
+            setUpToolbarTitleAndIcon(this)
+        }
+    }
+
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         PreferenceManager.setDefaultValues(requireContext(), R.xml.preferences_ee_data_management, false)
         addPreferencesFromResource(R.xml.preferences_ee_data_management)
-
-        if (!BuildConfig.DEBUG && !prefs.getBoolean(Prefs.TEMP_LOGGER, false))
-            findPreference<Preference>("temp_logger")?.isVisible = false
 
         fun importExport(import: Boolean) {
             val lists = listOf(
@@ -178,7 +176,11 @@ class DataManagementSettingsFragment :
                         putString(Prefs.RASTER_TILE_URL, urlText.text.toString())
                         putBoolean(Prefs.NO_SATELLITE_LABEL, hideLabelsSwitch.isChecked)
                     }
-                    activity?.let { ActivityCompat.recreate(it) } // need to reload scene
+
+                    // trigger the listener in MapFragment (if it exists)
+                    val map = prefs.getString(Prefs.THEME_BACKGROUND, "MAP")
+                    prefs.edit().putString(Prefs.THEME_BACKGROUND, if (map == "MAP") "AERIAL" else "MAP").apply()
+                    prefs.edit().putString(Prefs.THEME_BACKGROUND, map).apply()
                 }
                 .create()
             d.show()
@@ -189,14 +191,6 @@ class DataManagementSettingsFragment :
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences, key: String?) {
         when (key) {
             Prefs.DATA_RETAIN_TIME -> { lifecycleScope.launch(Dispatchers.IO) { cleaner.cleanOld() } }
-            Prefs.PREFER_EXTERNAL_SD -> { moveMapTilesToCurrentLocation() }
-            Prefs.TEMP_LOGGER -> { if (prefs.getBoolean(Prefs.TEMP_LOGGER, false)) {
-                Log.instances.removeAll { it is DatabaseLogger }
-                Log.instances.add(TempLogger)
-            } else {
-                Log.instances.remove(TempLogger)
-                Log.instances.add(databaseLogger)
-            }}
         }
     }
 
@@ -525,7 +519,7 @@ class DataManagementSettingsFragment :
                 // remove all per-preset quest settings for proper replace
                 prefs.all.keys.filter { qsRegex.containsMatchIn(it) }.forEach { remove(it) }
                 // set selected preset to default, because previously selected may not exist any more
-                putLong(Prefs.SELECTED_QUESTS_PRESET, 0)
+                putLong(Preferences.SELECTED_QUESTS_PRESET, 0)
             }
         }
         readToSettings(questSettingsLines)
@@ -602,7 +596,7 @@ class DataManagementSettingsFragment :
         val settings = prefs.all.filterKeys {
             !it.contains("TangramPinsSpriteSheet") // this is huge and gets generated if missing anyway
                 && !it.contains("TangramIconsSpriteSheet") // this is huge and gets generated if missing anyway
-                && it != Prefs.OAUTH2_ACCESS_TOKEN // login
+                && it != Preferences.OAUTH2_ACCESS_TOKEN // login
                 && !it.contains("osm.") // login data
                 && !it.matches(perPresetQuestSetting) // per-preset quest settings should be stored with presets, because preset id is never guaranteed to match
                 && !it.startsWith("custom_overlay") // custom overlays are exported separately
@@ -742,60 +736,6 @@ class DataManagementSettingsFragment :
             return false
         }
     }
-
-    private fun restartApp() {
-        // exitProcess does actually restart with the activity below, which should always be MainActivity.
-        // No idea how to come back to SettingsFragment automatically, or why it actually DOES
-        //  return to SettingsFragment when calling this from onActivityResult (settings import)
-        exitProcess(0)
-    }
-
-    private fun moveMapTilesToCurrentLocation() {
-        val sd = requireContext().externalCacheDirs
-            .firstOrNull { Environment.isExternalStorageRemovable(it) } ?: return
-        val default = requireContext().externalCacheDir ?: return
-        val sdCache = File(sd, "tile_cache")
-        val defaultCache = File(default, "tile_cache")
-
-        // move to preferred storage
-        val sdPreferred = prefs.getBoolean(Prefs.PREFER_EXTERNAL_SD, false)
-        var d: AlertDialog? = null
-        val target = if (sdPreferred) sdCache else defaultCache
-        val source = if (sdPreferred) defaultCache else sdCache
-        if (!source.exists()) return
-        target.mkdirs()
-        val moveJob = lifecycleScope.launch(Dispatchers.IO) {
-            // copyRecursively would be easier, but crashes with FileNotFoundException (even if I tell it to skip in that case, wtf?)
-            val files = source.listFiles() ?: return@launch
-            val size = files.size
-            var i = 0
-            for (f in files) {
-                i++
-                if (!f.exists() || f.isDirectory) continue
-                val dstFile = File(target, f.toRelativeString(source))
-                if (!coroutineContext.isActive) break
-                if (i % 100 == 0)
-                    activity?.runOnUiThread { d?.setMessage("$i / $size") }
-                if (dstFile.exists()) continue
-                try {
-                    f.inputStream().use { input -> dstFile.outputStream().use { input.copyTo(it) } }
-                    dstFile.setLastModified(f.lastModified())
-                } catch (e: IOException) {
-                    continue
-                }
-            }
-            yield() // don't delete if moving was canceled
-            kotlin.runCatching { source.deleteRecursively() }
-            d?.dismiss()
-            restartApp() // necessary for really changing cache directory
-        }
-        d = AlertDialog.Builder(requireContext())
-            .setTitle(R.string.moving)
-            .setMessage("0 / ?")
-            .setNegativeButton(android.R.string.cancel) { _,_ -> moveJob.cancel() }
-            .setCancelable(false)
-            .show()
-    }
 }
 
 // when importing, names should be updated!
@@ -818,7 +758,7 @@ private const val REQUEST_CODE_TREES_EXPORT = 5332
 private const val REQUEST_CODE_CUSTOM_QUEST_IMPORT = 5333
 private const val REQUEST_CODE_CUSTOM_QUEST_EXPORT = 5334
 
-const val LAST_KNOWN_DB_VERSION = 17L
+const val LAST_KNOWN_DB_VERSION = 19L
 
 private const val BACKUP_HIDDEN_OSM_QUESTS = "quests"
 private const val BACKUP_HIDDEN_NOTES = "notes"

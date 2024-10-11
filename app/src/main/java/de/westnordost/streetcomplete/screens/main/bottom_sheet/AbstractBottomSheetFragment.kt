@@ -16,6 +16,7 @@ import com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDE
 import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.quests.TagEditor
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.updateMargins
@@ -31,13 +32,13 @@ import kotlin.math.min
  *  - bottom sheet
  *  - title view that acts like a button to expand/retract the bottom sheet
  *  - close/back button that is only shown when the bottom sheet is fully expanded
- * */
+ */
 abstract class AbstractBottomSheetFragment : Fragment(), IsCloseableBottomSheet {
 
     protected abstract val bottomSheetContainer: SlidingRelativeLayout
     protected abstract val bottomSheet: ViewGroup
     protected abstract val scrollViewChild: View
-    protected val prefs: ObservableSettings by inject()
+    protected val prefs: Preferences by inject()
 
     /** Title view of the bottom sheet. Tapping on it expands / retracts the bottom sheet */
     protected abstract val bottomSheetTitle: View?

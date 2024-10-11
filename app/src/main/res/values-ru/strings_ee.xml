@@ -26,7 +26,6 @@
     <string name="pref_way_direction">Показывать направление линий</string>
     <string name="pref_way_direction_summary">Рисовать стрелки на выделенных линиях при открытии квеста. Полезно при добавлении улиц с односторонним движением.</string>
     <string name="pref_quest_geometries_summary">Выделять линии и площадки с квестами</string>
-    <string name="pref_offset_fix_title">Убрать сдвиг метки квеста</string>
     <string name="pref_show_solved_animation">Показывать анимацию после решения квеста</string>
     <string name="pref_show_solved_animation_summary">Также влияет на звук решения квеста</string>
     <string name="pref_gpx_track_title">Показывать трек GPX из файла</string>
@@ -34,7 +33,6 @@
     <string name="pref_gpx_track_enable">Показывать трек GPX</string>
     <string name="pref_gpx_track_loading_error">Ошибка загрузки трека GPX из файла</string>
     <string name="pref_gpx_track_download">Загрузить зону вдоль трека GPX</string>
-    <string name="pref_gpx_track_download_too_big">Зона загрузки слишком велика, пожалуйста, загрузите вручную</string>
     <string name="pref_screen_ui">Интерфейс</string>
     <string name="pref_volume_zoom_title">Масштаб кнопками громкости</string>
     <string name="pref_volume_zoom_summary">Менять масштаб кнопками громкости</string>
@@ -56,7 +54,6 @@
     <string name="show_nearby_quests_distance">Показывать квесты не далее, чем (предел 10 метров)</string>
     <string name="pref_search_more_languages_title">Искать объекты на других языках</string>
     <string name="pref_screen_data_management">Управление данными</string>
-    <string name="moving">Перемещение участков…</string>
     <string name="pref_dynamic_quest_creation_summary">Квесты формируются при загрузке отображаемой области. Не быстро, зато сразу же отражаются изменения настроек квестов.</string>
     <string name="pref_dynamic_quest_creation_title">Формировать квесты динамически</string>
     <string name="pref_network_interval_title">Частота замера положения по сетям связи</string>
@@ -120,8 +117,6 @@
     <string name="pref_delete_old_data_after">Удалять старые данные через</string>
     <string name="pref_delete_old_data_after_message">Удалять скачанные данные OSM, старше, чем столько дней</string>
     <string name="pref_delete_old_data_after_summary">%d дня(-ей)</string>
-    <string name="pref_use_sd">Хранить участки карт на внешней карте SD</string>
-    <string name="pref_use_sd_summary">Изменение этой настройки перемещает данные, что потребует некоторого времени</string>
     <string name="pref_tile_source_title">Источник участков для спутниковых/аэрофото снимков</string>
     <string name="pref_trees_title">Загрузить файл дерева квестов</string>
     <string name="tree_custom_quest_import">Передать</string>
@@ -137,9 +132,6 @@
     <string name="day_night_ignore">Не использовать</string>
     <string name="day_night_visibility">Скрывать квесты, не соответствующие времени суток</string>
     <string name="pref_quest_settings_preset_title">Настройки квестов для предустановок</string>
-    <string name="delete_confirmation_tiles">Участки карт</string>
-    <string name="delete_confirmation_data">Данные квестов и OSM</string>
-    <string name="delete_confirmation_both">Всё</string>
     <string name="theme_dark_contrast">Тёмная (контрастная)</string>
     <string name="resurvey_intervals_even_less_often">Спрашивать ещё реже</string>
     <string name="pref_gps_interval_title">Частота замера положения по ГНСС</string>
@@ -161,12 +153,12 @@
     <string name="quest_order_reverse">Обратный порядок квестов</string>
     <string name="quick_switch_map_background">Смена фона: карта/аэрофото</string>
     <string name="quick_switch_preset">Смена предустановки</string>
-    <string name="quest_osmose_title">Квест из Osmose: %s</string>
+    <string name="quest_osmose_title">Квест из Osmose:</string>
     <string name="quest_osmose_false_positive">Сообщать о ложных</string>
     <string name="quest_osmose_message_for_element">Элемент типа %1$s: %2$s</string>
     <string name="quest_osmose_remove_checked">Убрать</string>
     <string name="quest_osmose_no_undo">Уверенны\? Это действие не обратимо!</string>
-    <string name="quest_custom_quest_title">Свои квесты: %s</string>
+    <string name="quest_custom_quest_title">Свои квесты:</string>
     <string name="quest_custom_quest_osmose_not_found">Запись удалена, убираем квест</string>
     <string name="quest_osmose_delete_this_issue">Скрыть проблему локально</string>
     <string name="quest_settings_resurvey_all_opening_hours_yes">Всех</string>
@@ -175,7 +167,7 @@
     <string name="quest_seating_sidewalk">На тротуаре</string>
     <string name="quest_seating_street">На улице</string>
     <string name="quest_osmose_select_element">Выбрать элемент</string>
-    <string name="quest_fixme_title">Исправить: %1$s</string>
+    <string name="quest_fixme_title">Исправить:</string>
     <string name="quest_service_building_type_substation">Подстанция (ПС, ТП, РП)</string>
     <string name="quest_service_building_type_well">Водяная скважина</string>
     <string name="quest_benchMaterial_wood">Дерево</string>
@@ -196,10 +188,10 @@
     <string name="quest_poi_cycling_title">Места: велосипед</string>
     <string name="quest_poi_business_title">Места: торговля</string>
     <string name="quest_poi_camera_title">Места: камеры</string>
-    <string name="quest_poi_vending_title">Места: торговые %s</string>
+    <string name="quest_poi_vending_title">Места: торговые</string>
     <string name="quest_poi_has_atm_title">Места: есть банкомат</string>
     <string name="quest_poi_misc_title">Места: прочие</string>
-    <string name="quest_poi_recycling_title">Места: переработка %s</string>
+    <string name="quest_poi_recycling_title">Места: переработка</string>
     <string name="quest_poi_vacant_title">Места: свободные</string>
     <string name="quest_service_building_type_pressure">Газораспределительная станция (ГРС)</string>
     <string name="quest_service_building_type_reservoir">Ёмкость</string>
@@ -273,15 +265,12 @@
     <string name="restore_dialog_hint">Долгим удержанием кнопки Отмена можно вручную указать какие из квестов восстановить.</string>
     <string name="quest_artwork_fountain">Фонтан</string>
     <string name="quest_fixme_remove">Снять тег fixme</string>
-    <string name="quest_service_building_type_title">Какого типа эта служебная постройка %s\?</string>
+    <string name="quest_service_building_type_title">Какого типа эта служебная постройка\?</string>
     <string name="default_disabled_msg_poi_fixme">Этот \"квест\" покажет теги Исправить красными кружками (кроме значений \"yes\" и \"continue\" по умолчанию). Нажатие на кружок покажет подробности и другие ответы.</string>
     <string name="pref_custom_title">Загрузить файл своих квестов</string>
     <string name="quest_monitor_permission_warning">Требуется разрешение на определение местоположения в фоне для отслеживания квестов неподалёку</string>
     <string name="quest_monitor_search_radius_text">Укажите радиус поиска квестов неподалёку. Знайте, что могут быть найдены и квесты чуть дальше. Местоположения с погрешностью позиционирования больше этого значения отбрасываются.</string>
     <string name="pref_quest_monitor_download">Подгружать данные по необходимости\? Значительно повысит расход трафика и заряда, и может не работать из-за политик энергосбережения в Android.</string>
-    <string name="delete_cache_dialog_message2">Стереть все скачанные данные карт, а также квестов\?
-\nДанные автоматически обновляются через %1$s дня(-ей), а неиспользуемые данные — через %2$s дня(-ей).
-\nВыберите, что стереть.</string>
     <string name="quest_settings_element_selection">Укажите подходящие для этого квеста элементы. <a href="https://github.com/Helium314/SCEE/blob/modified/CONTRIBUTING_A_NEW_QUEST.md#element-selection"> Нажмите</a>, чтобы открыть сведения о правилах выбора элементов в браузере.</string>
     <string name="quest_generic_surface_message">Не требовать заметку для ответов о покрытии без конкретики\?</string>
     <string name="quest_settings_osmose_level_title">Выберите степень критичности для скачивания и показа</string>
@@ -301,7 +290,7 @@
     <string name="quest_settings_resurvey_all_opening_hours_message">Обследовать повторно все часы работы, даже те значения, что не ясны SCEE\? Возможно придётся воспользоваться редактором тегов для ввода верных значений.</string>
     <string name="quest_settings_dot_labels_message">Указать какие теги применять для надписей и в каком порядке. Пустая строка скроет все надписи, \"label\" покажет именование StreetComplete по умолчанию с надписью из name, brand, ref, local_ref и operator.</string>
     <string name="quest_poi_machine_title">Места: автоматы</string>
-    <string name="quest_poi_traffic_title">Места: дорожное движение %s</string>
+    <string name="quest_poi_traffic_title">Места: дорожное движение</string>
     <string name="quest_outdoor_seating_name_title">Какой здесь тип сидячих мест снаружи\?</string>
     <string name="quest_seating_parklet">Вдоль бордюра или на месте парковки</string>
     <string name="quest_settings_level_title">Показать этот квест для:</string>
@@ -449,7 +438,7 @@
     <string name="quest_service_building_monitoring_station">Станция мониторинга</string>
     <string name="quest_service_building_monitoring_station_description">Станция, расположенная в собственном здании, которая следит за чем-то</string>
     <string name="quest_service_building_other">Другое служебное здание</string>
-    <string name="quest_street_cabinet_type_title">Что это за уличный шкаф, %s?</string>
+    <string name="quest_street_cabinet_type_title">Что это за уличный шкаф?</string>
     <string name="quest_street_cabinet_postal_service">Почтовая служба</string>
     <string name="quest_street_cabinet_traffic_control">Контроль дорожного движения</string>
     <string name="quest_shelter_type_sun_shelter">Укрытие от солнца</string>
@@ -519,4 +508,11 @@
     <string name="default_disabled_msg_viaFerrataScale">Этот тип квеста по умолчанию отключен, поскольку оценка маршрутов виа Феррата очень субъективна и требует экспертных знаний в используемой системе оценивания при восхождении на виа Феррата, поскольку это требует продвинутых навыков альпинизма. Поскольку во всем мире не существует шкалы сложности виа Феррата, здесь используется немецкая шкала Хеслера.</string>
     <string name="quest_piste_difficulty_title">Насколько сложна эта трасса?</string>
     <string name="quest_piste_difficulty_advanced">Продвинутый</string>
+    <string name="quest_parking_orientation_title">В каком направлении здесь паркуются автомобили?</string>
+    <string name="quest_parking_capacity_title">Сколько машин может здесь припарковаться?</string>
+    <string name="quest_parking_capacity_disabled_default_disabled_msg">Задания, добавленные в SCEE, по умолчанию всегда отключены, так как они не всегда могут быть ответственными и могут требовать знания темы и наличия тегов.
+\nЭтот квест не будет запрашиваться, если установлено значение capacity:disabled=yes. Если вы хотите включить их, измените выбор элемента с «and !capacity:disabled» на «and (!capacity:disabled or capacity:disabled=yes)»</string>
+    <string name="quest_parking_capacity_disabled_answer_yes">Есть, но количество неясно</string>
+    <string name="quest_parking_capacity_hint">Это также включает в себя специальные места, например, для людей с ограниченными возможностями, семей, для зарядки и т.д. Скройте задание, если парковочные места не отмечены и, следовательно, не поддаются подсчету</string>
+    <string name="quest_parking_capacity_disabled_title">Сколько здесь парковочных мест для инвалидов?</string>
 </resources>

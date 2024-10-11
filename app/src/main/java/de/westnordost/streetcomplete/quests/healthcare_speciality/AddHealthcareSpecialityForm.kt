@@ -13,10 +13,9 @@ import de.westnordost.streetcomplete.quests.AMultiValueQuestForm
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
 import de.westnordost.streetcomplete.quests.AnswerItem
 import de.westnordost.streetcomplete.quests.TagEditor
-import de.westnordost.streetcomplete.util.LastPickedValuesStore
 import de.westnordost.streetcomplete.util.ktx.geometryType
 import de.westnordost.streetcomplete.util.ktx.hideKeyboard
-import de.westnordost.streetcomplete.util.mostCommonWithin
+import de.westnordost.streetcomplete.util.takeFavourites
 import de.westnordost.streetcomplete.view.controller.FeatureViewController
 import de.westnordost.streetcomplete.view.dialogs.SearchFeaturesDialog
 
@@ -28,7 +27,7 @@ class AddHealthcareSpecialityForm : AMultiValueQuestForm<String>() {
     override val otherAnswers get() = if (TagEditor.showingTagEditor) emptyList() else listOf(AnswerItem(R.string.quest_healthcare_speciality_switch_ui) {
         val f = MedicalSpecialityTypeForm()
         if (f.arguments == null) f.arguments = bundleOf()
-        val args = createArguments(questKey, questType, geometry, 0f, 0f)
+        val args = createArguments(questKey, questType, geometry, 0.0, 0.0)
         f.requireArguments().putAll(args)
         val osmArgs = createArguments(element)
         f.requireArguments().putAll(osmArgs)
@@ -68,7 +67,7 @@ class MedicalSpecialityTypeForm : AbstractOsmQuestForm<String>() {
     override val otherAnswers = if (TagEditor.showingTagEditor) emptyList() else listOf(AnswerItem(R.string.quest_healthcare_speciality_switch_ui) {
         val f = AddHealthcareSpecialityForm()
         if (f.arguments == null) f.arguments = bundleOf()
-        val args = createArguments(questKey, questType, geometry, 0f, 0f)
+        val args = createArguments(questKey, questType, geometry, 0.0, 0.0)
         f.requireArguments().putAll(args)
         val osmArgs = createArguments(element)
         f.requireArguments().putAll(osmArgs)
@@ -79,22 +78,12 @@ class MedicalSpecialityTypeForm : AbstractOsmQuestForm<String>() {
         }
     })
 
-    private lateinit var favs: LastPickedValuesStore<String>
-
     private val lastPickedAnswers by lazy {
-        favs.get()
-            .mostCommonWithin(target = 12, historyCount = 50, first = 1)
-            .toList()
+        prefs.getLastPicked(javaClass.simpleName).takeFavourites(12, 50, 1)
     }
 
     override fun onAttach(ctx: Context) {
         super.onAttach(ctx)
-        favs = LastPickedValuesStore(
-            prefs,
-            key = javaClass.simpleName,
-            serialize = { it },
-            deserialize = { it },
-        )
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -145,7 +134,7 @@ class MedicalSpecialityTypeForm : AbstractOsmQuestForm<String>() {
             R.id.leaveNoteRadioButton -> composeNote()
             R.id.replaceRadioButton   -> {
                 applyAnswer(featureCtrl.feature!!.addTags["healthcare:speciality"]!!)
-                favs.add(featureCtrl.feature!!.id)
+                prefs.addLastPicked(javaClass.simpleName, featureCtrl.feature!!.id)
             }
         }
     }

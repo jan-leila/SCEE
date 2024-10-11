@@ -19,16 +19,16 @@ import de.westnordost.streetcomplete.data.quest.Countries
 import de.westnordost.streetcomplete.quests.questPrefix
 import de.westnordost.streetcomplete.util.dialogs.setViewWithDefaultPadding
 import de.westnordost.streetcomplete.util.ktx.dpToPx
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class OsmoseQuest(private val osmoseDao: OsmoseDao) : ExternalSourceQuestType {
 
     override fun getTitle(tags: Map<String, String>) = R.string.quest_osmose_title
 
-    override fun getTitleArgs(tags: Map<String, String>): Array<String> = arrayOf("")
+    override suspend fun download(bbox: BoundingBox) = osmoseDao.download(bbox)
 
-    override fun download(bbox: BoundingBox) = osmoseDao.download(bbox)
-
-    override fun upload() = osmoseDao.reportFalsePositives()
+    override suspend fun upload() = osmoseDao.reportFalsePositives()
 
     override fun deleteMetadataOlderThan(timestamp: Long) = osmoseDao.deleteOlderThan(timestamp)
 
@@ -58,7 +58,7 @@ class OsmoseQuest(private val osmoseDao: OsmoseDao) : ExternalSourceQuestType {
 
     override fun onSyncedEdit(edit: ElementEdit, id: String?) {
         if (id != null)
-            osmoseDao.reportChange(id, false) // edits are never false positive
+            GlobalScope.launch { osmoseDao.reportChange(id, false) } // edits are never false positive
     }
 
     override val enabledInCountries: Countries

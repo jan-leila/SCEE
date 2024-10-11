@@ -11,13 +11,13 @@ import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
 import de.westnordost.streetcomplete.databinding.QuestNameSuggestionBinding
 import de.westnordost.streetcomplete.quests.AbstractOsmQuestForm
+import de.westnordost.streetcomplete.quests.AnswerItem
 import de.westnordost.streetcomplete.screens.main.map.getTreeGenus
-import de.westnordost.streetcomplete.util.LastPickedValuesStore
 import de.westnordost.streetcomplete.util.SearchAdapter
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.math.distanceTo
 import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
-import de.westnordost.streetcomplete.util.mostCommonWithin
+import de.westnordost.streetcomplete.util.takeFavourites
 import org.koin.android.ext.android.inject
 import java.io.File
 import java.io.IOException
@@ -25,7 +25,7 @@ import java.text.Normalizer
 import java.util.Locale
 import java.util.regex.Pattern
 
-class AddTreeGenusForm : AbstractOsmQuestForm<Tree>() {
+class AddTreeGenusForm : AbstractOsmQuestForm<TreeAnswer>() {
 
     override val contentLayoutResId = R.layout.quest_name_suggestion
     private val binding by contentViewBinding(QuestNameSuggestionBinding::bind)
@@ -38,7 +38,7 @@ class AddTreeGenusForm : AbstractOsmQuestForm<Tree>() {
         if (tree == null) {
             binding.nameInput.error = context?.resources?.getText(R.string.quest_tree_error)
         } else {
-            favs.add("${tree.isSpecies}§${tree.name}")
+            prefs.addLastPicked(javaClass.simpleName, "${tree.isSpecies}§${tree.name}")
             applyAnswer(tree)
         }
     }
@@ -46,6 +46,12 @@ class AddTreeGenusForm : AbstractOsmQuestForm<Tree>() {
     override fun isFormComplete(): Boolean {
         return name.isNotEmpty()
     }
+
+    override val otherAnswers = listOf(
+        AnswerItem(R.string.quest_leafType_tree_is_just_a_stump) {
+            applyAnswer(NotTreeButStump, true)
+        },
+    )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -95,30 +101,16 @@ class AddTreeGenusForm : AbstractOsmQuestForm<Tree>() {
         }
         return trees.filter { tree ->
             tree.toDisplayString() == search
-            || tree.name == search
-            || tree.name.split(" ").any { it.startsWith(search, true) }
-            || tree.localName?.contains(search, true) == true
-        //sorting: genus-only first, then prefer trees with localName
+                || tree.toDisplayString().startsWith(search, true)
+                || tree.name == search
+                || tree.name.split(" ").any { it.startsWith(search, true) }
+                || tree.localName?.contains(search, true) == true
+            //sorting: genus-only first, then prefer trees with localName
         }.sortedBy { it.localName == null }.sortedBy { it.isSpecies }
     }
 
-    override fun onAttach(ctx: Context) {
-        super.onAttach(ctx)
-        favs = LastPickedValuesStore(
-            prefs,
-            key = javaClass.simpleName,
-            serialize = { it },
-            deserialize = { it },
-            maxEntries = 25
-        )
-    }
-
-    private lateinit var favs: LastPickedValuesStore<String>
-
     private val lastPickedAnswers by lazy {
-        favs.get()
-            .mostCommonWithin(target = 3, historyCount = 25, first = 1)
-            .toList()
+        prefs.getLastPicked(javaClass.simpleName).takeFavourites(20, 50, 1)
     }
 
     private fun loadTrees(): Set<Tree> {

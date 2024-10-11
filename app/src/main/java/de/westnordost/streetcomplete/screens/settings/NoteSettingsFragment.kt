@@ -5,20 +5,23 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
+import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.Toolbar
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
-import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.osmquests.OsmQuestController
 import de.westnordost.streetcomplete.data.osmnotes.notequests.getRawBlockList
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.screens.HasTitle
 import de.westnordost.streetcomplete.util.dialogs.setDefaultDialogPadding
+import de.westnordost.streetcomplete.util.ktx.setUpToolbarTitleAndIcon
 import de.westnordost.streetcomplete.util.ktx.toast
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -31,9 +34,16 @@ import java.util.zip.ZipOutputStream
 
 class NoteSettingsFragment : PreferenceFragmentCompat(), HasTitle {
 
-    private val prefs: ObservableSettings by inject()
+    private val prefs: Preferences by inject()
 
     override val title: String get() = getString(R.string.pref_screen_notes)
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        view.rootView.findViewById<Toolbar>(R.id.toolbar)?.apply {
+            setUpToolbarTitleAndIcon(this)
+        }
+    }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         PreferenceManager.setDefaultValues(requireContext(), R.xml.preferences_ee_notes, false)

@@ -21,10 +21,8 @@ import de.westnordost.streetcomplete.overlays.Style
 import de.westnordost.streetcomplete.quests.max_weight.MaxWeightSign
 import de.westnordost.streetcomplete.quests.max_weight.osmKey
 import de.westnordost.streetcomplete.util.ktx.containsAnyKey
-import de.westnordost.streetcomplete.util.ktx.darken
 import de.westnordost.streetcomplete.util.ktx.isArea
-import de.westnordost.streetcomplete.util.ktx.toARGBString
-import de.westnordost.streetcomplete.util.ktx.toRGBString
+import de.westnordost.streetcomplete.util.ktx.toHexColor
 
 class RestrictionOverlay : Overlay {
     // show restriction icons? will need to add property for rotation / angle
@@ -81,7 +79,7 @@ class RestrictionOverlay : Overlay {
             if (colors.first() == colors.last())
                 colors.first()
             else
-                toARGBString(ColorUtils.blendARGB(parseColor(colors.first()), parseColor(colors.last()), 0.5f))
+                ColorUtils.blendARGB(parseColor(colors.first()), parseColor(colors.last()), 0.5f).toHexColor()
         } else
             relations.first().getColor(way.id)
         return PolylineStyle(StrokeStyle(color))
@@ -90,8 +88,8 @@ class RestrictionOverlay : Overlay {
     private fun getNodeStyle(node: Node): Style? {
         val highway = node.tags["highway"] ?: return null
         val icon = when (highway) {
-            "stop" -> "ic_restriction_stop"
-            "give_way" -> "ic_restriction_give_way"
+            "stop" -> R.drawable.ic_restriction_stop
+            "give_way" -> R.drawable.ic_restriction_give_way
             else -> return null
         }
         return PointStyle(icon)
@@ -101,7 +99,9 @@ class RestrictionOverlay : Overlay {
 private fun Relation.getColor(wayId: Long): String {
     if (!isSupportedTurnRestriction()) return Color.BLACK
     val role = members.firstOrNull { it.type == ElementType.WAY && it.ref == wayId }?.role ?: return Color.INVISIBLE
-    return getColor(role, getRestrictionType()!!).replace("#", "#90") // make it transparent for at least some support of multiple relations on a single way
+    return getColor(role, getRestrictionType()!!)
+    //.replace("#", "#90") // make it transparent for at least some support of multiple relations on a single way
+    // nope, unfortunately we can't simply make it transparent here, because MapLibre doesn't understand colors with alpha channel
 }
 
 private fun getColor(role: String, restriction: String): String = when {
@@ -141,7 +141,7 @@ val turnRestrictionTypes = linkedSetOf(
     "only_straight_on",
 )
 
-private val maxWeightKeys = MaxWeightSign.values().map { it.osmKey }.toTypedArray()
+private val maxWeightKeys = MaxWeightSign.entries.map { it.osmKey }.toTypedArray()
 
-private val darkerGold = toRGBString(darken(parseColor(Color.GOLD), 0.75f))
-private val darkerOrange = toRGBString(darken(parseColor(Color.ORANGE), 0.75f))
+private val darkerGold = ColorUtils.blendARGB(parseColor(Color.GOLD), parseColor(Color.BLACK), 0.75f).toHexColor()
+private val darkerOrange = ColorUtils.blendARGB(parseColor(Color.ORANGE), parseColor(Color.BLACK), 0.75f).toHexColor()

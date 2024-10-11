@@ -4,10 +4,8 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isGone
-import com.russhwolf.settings.ObservableSettings
 import de.westnordost.osmfeatures.Feature
 import de.westnordost.osmfeatures.GeometryType
-import de.westnordost.streetcomplete.Prefs.PREFERRED_LANGUAGE_FOR_NAMES
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditAction
 import de.westnordost.streetcomplete.data.osm.edits.create.CreateNodeAction
@@ -18,10 +16,12 @@ import de.westnordost.streetcomplete.data.osm.mapdata.Element
 import de.westnordost.streetcomplete.data.osm.mapdata.ElementType
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
 import de.westnordost.streetcomplete.data.osm.mapdata.Node
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.databinding.FragmentOverlayPlacesBinding
 import de.westnordost.streetcomplete.osm.LocalizedName
 import de.westnordost.streetcomplete.osm.POPULAR_PLACE_FEATURE_IDS
 import de.westnordost.streetcomplete.osm.applyTo
+import de.westnordost.streetcomplete.osm.getDisusedPlaceTags
 import de.westnordost.streetcomplete.osm.isDisusedPlace
 import de.westnordost.streetcomplete.osm.isPlace
 import de.westnordost.streetcomplete.osm.parseLocalizedNames
@@ -31,7 +31,7 @@ import de.westnordost.streetcomplete.overlays.AnswerItem
 import de.westnordost.streetcomplete.quests.LocalizedNameAdapter
 import de.westnordost.streetcomplete.util.DummyFeature
 import de.westnordost.streetcomplete.util.getLanguagesForFeatureDictionary
-import de.westnordost.streetcomplete.util.getLocationLabel
+import de.westnordost.streetcomplete.util.getLocationSpanned
 import de.westnordost.streetcomplete.util.ktx.geometryType
 import de.westnordost.streetcomplete.util.ktx.viewLifecycleScope
 import de.westnordost.streetcomplete.view.AdapterDataChangedWatcher
@@ -49,7 +49,7 @@ class PlacesOverlayForm : AbstractOverlayForm() {
     override val contentLayoutResId = R.layout.fragment_overlay_places
     private val binding by contentViewBinding(FragmentOverlayPlacesBinding::bind)
 
-    private val prefs: ObservableSettings by inject()
+    private val prefs: Preferences by inject()
 
     private var originalFeature: Feature? = null
     private var originalNoName: Boolean = false
@@ -98,7 +98,7 @@ class PlacesOverlayForm : AbstractOverlayForm() {
         super.onViewCreated(view, savedInstanceState)
 
         // title hint label with name is a duplication, it is displayed in the UI already
-        setTitleHintLabel(element?.tags?.let { getLocationLabel(it, resources) })
+        setTitleHintLabel(element?.tags?.let { getLocationSpanned(it, resources) })
         setMarkerIcon(R.drawable.ic_quest_shop)
 
         featureCtrl = FeatureViewController(featureDictionary, binding.featureTextView, binding.featureIconView)
@@ -125,7 +125,7 @@ class PlacesOverlayForm : AbstractOverlayForm() {
         val persistedNames = savedInstanceState?.getString(LOCALIZED_NAMES_DATA)?.let { Json.decodeFromString<List<LocalizedName>>(it) }
 
         val selectableLanguages = (countryInfo.officialLanguages + countryInfo.additionalStreetsignLanguages).distinct().toMutableList()
-        val preferredLanguage = prefs.getStringOrNull(PREFERRED_LANGUAGE_FOR_NAMES)
+        val preferredLanguage = prefs.preferredLanguageForNames
         if (preferredLanguage != null) {
             if (selectableLanguages.remove(preferredLanguage)) {
                 selectableLanguages.add(0, preferredLanguage)
@@ -218,7 +218,7 @@ class PlacesOverlayForm : AbstractOverlayForm() {
 
     override fun onClickOk() {
         val firstLanguage = namesAdapter?.names?.firstOrNull()?.languageTag?.takeIf { it.isNotBlank() }
-        if (firstLanguage != null) prefs.putString(PREFERRED_LANGUAGE_FOR_NAMES, firstLanguage)
+        if (firstLanguage != null) prefs.preferredLanguageForNames = firstLanguage
 
         viewLifecycleScope.launch {
             applyEdit(createEditAction(
@@ -248,6 +248,9 @@ class PlacesOverlayForm : AbstractOverlayForm() {
     }
 }
 
+/** return the id of the feature, without any brand stuff */
+private val Feature.featureId get() = if (isSuggestion) id.substringBeforeLast("/") else id
+
 private suspend fun createEditAction(
     element: Element?,
     geometry: ElementGeometry,
@@ -261,24 +264,32 @@ private suspend fun createEditAction(
     val tagChanges = StringMapChangesBuilder(element?.tags ?: emptyMap())
 
     val hasAddedNames = previousNames.isEmpty() && newNames.isNotEmpty()
-    val hasChangedNames = previousNames != newNames
+    var hasChangedNames = previousNames != newNames
     val hasChangedFeature = newFeature != previousFeature
+    val hasChangedFeatureType = previousFeature?.featureId != newFeature.featureId
     val isFeatureWithName = newFeature.addTags.get("name") != null
     val wasFeatureWithName = previousFeature?.addTags?.get("name") != null
     val wasVacant = element != null && element.isDisusedPlace()
     val isVacant = newFeature.id == "shop/vacant"
 
+    if (newFeature.isSuggestion) {
+        // selecting NSI preset will always return empty newNames, even if NSI does set new name=* tag
+        hasChangedNames = parseLocalizedNames(newFeature.addTags) != previousNames
+    }
+
     val shouldNotReplaceShop =
+        // if NSI added e.g. wikidata details, but neither names nor types changed (see #5940)
+        !hasChangedNames && !hasChangedFeatureType
         // only a name was added (name was missing before; user wouldn't be able to answer
         // if the place changed or not anyway, so rather keep previous information)
-        hasAddedNames && !hasChangedFeature
+        || hasAddedNames && !hasChangedFeature
         // previously: only the feature was changed, the non-empty name did not change
         // - see #5195
         // place has been added, nothing to replace
         || element == null
     val shouldAlwaysReplaceShop =
-        // the feature is or was a brand feature (i.e. overwrites the name)
-        isFeatureWithName || wasFeatureWithName
+        // the feature is or was a brand feature (i.e. overwrites the name) and the type has changed
+        (isFeatureWithName || wasFeatureWithName) && hasChangedFeatureType
         // was vacant before but not anymore (-> cleans up any previous tags that may be
         // associated with the old place)
         || wasVacant && hasChangedFeature
@@ -298,7 +309,11 @@ private suspend fun createEditAction(
         }
 
     if (doReplaceShop) {
-        tagChanges.replacePlace(newFeature.addTags)
+        if (isVacant) {
+            tagChanges.replacePlace(getDisusedPlaceTags(element?.tags))
+        } else {
+            tagChanges.replacePlace(newFeature.addTags)
+        }
     } else {
         for ((key, value) in previousFeature?.removeTags.orEmpty()) {
             tagChanges.remove(key)

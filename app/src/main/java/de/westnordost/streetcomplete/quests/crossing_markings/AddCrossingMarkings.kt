@@ -1,5 +1,7 @@
 package de.westnordost.streetcomplete.quests.crossing_markings
 
+import android.content.Context
+import androidx.appcompat.app.AlertDialog
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.elementfilter.toElementFilterExpression
 import de.westnordost.streetcomplete.data.osm.geometry.ElementGeometry
@@ -9,19 +11,18 @@ import de.westnordost.streetcomplete.data.osm.osmquests.OsmElementQuestType
 import de.westnordost.streetcomplete.data.user.achievements.EditTypeAchievement.PEDESTRIAN
 import de.westnordost.streetcomplete.osm.Tags
 import de.westnordost.streetcomplete.osm.isCrossing
-import de.westnordost.streetcomplete.quests.YesNoQuestForm
-import de.westnordost.streetcomplete.util.ktx.toYesNo
+import de.westnordost.streetcomplete.osm.updateCheckDateForKey
 
-class AddCrossingMarkings : OsmElementQuestType<Boolean> {
+class AddCrossingMarkings : OsmElementQuestType<CrossingMarkings> {
 
     private val crossingFilter by lazy { """
         nodes with
           highway = crossing
           and foot != no
-          and !crossing:markings
-          and (!crossing or crossing = island)
+          and $crossingMarkingExpression
           and (!crossing:signals or crossing:signals = no)
     """.toElementFilterExpression() }
+
     /* only looking for crossings that have no crossing=* at all set because if the crossing was
      * - if it had markings, it would be tagged with "marked","zebra" or "uncontrolled"
      * - if it hadn't, it would be tagged with "unmarked"
@@ -35,7 +36,7 @@ class AddCrossingMarkings : OsmElementQuestType<Boolean> {
           or highway = service and service = driveway
     """.toElementFilterExpression() }
 
-    override val changesetComment = "Specify whether pedestrian crossings have markings"
+    override val changesetComment = "Specify type or existence of pedestrian crossing markings"
     override val wikiLink = "Key:crossing:markings"
     override val icon = R.drawable.ic_quest_pedestrian_crossing
     override val achievements = listOf(PEDESTRIAN)
@@ -57,13 +58,35 @@ class AddCrossingMarkings : OsmElementQuestType<Boolean> {
     override fun isApplicableTo(element: Element): Boolean? =
         if (!crossingFilter.matches(element)) false else null
 
-    override fun createForm() = YesNoQuestForm()
+    override fun createForm() =
+        if (prefs.getBoolean(PREF_CROSSING_MARKING_EXTENDED, false)) {
+            AddCrossingMarkingsForm()
+        } else {
+            AddCrossingMarkingsYesNoForm()
+        }
 
-    override fun applyAnswerTo(answer: Boolean, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
-        tags["crossing:markings"] = answer.toYesNo()
-        /* We only tag yes/no, however, in countries where depending on the kind of marking,
-         * different traffic rules apply, it makes sense to ask which marking it is. But to know
-         * which kinds exist per country needs research. (Whose results should be added to the
-         * wiki page for crossing:markings first) */
+    override fun applyAnswerTo(answer: CrossingMarkings, tags: Tags, geometry: ElementGeometry, timestampEdited: Long) {
+        tags["crossing:markings"] = answer.osmValue
+    }
+
+    override val hasQuestSettings: Boolean = true
+
+    override fun getQuestSettingsDialog(context: Context): AlertDialog =
+        AlertDialog.Builder(context)
+            .setMessage(R.string.pref_quest_pedestrian_crossing_markings_extended)
+            .setPositiveButton(R.string.quest_generic_hasFeature_yes) { _, _ ->
+                prefs.edit().putBoolean(PREF_CROSSING_MARKING_EXTENDED, true).apply()
+            }
+            .setNegativeButton(R.string.quest_generic_hasFeature_no) { _, _ ->
+                prefs.edit().putBoolean(PREF_CROSSING_MARKING_EXTENDED, false).apply()
+            }
+            .create()
+
+    private val crossingMarkingExpression = if (prefs.getBoolean(PREF_CROSSING_MARKING_EXTENDED, false)) {
+        "( !crossing:markings or crossing:markings=yes )"
+    } else {
+        "!crossing:markings and (!crossing or crossing = island )"
     }
 }
+
+private const val PREF_CROSSING_MARKING_EXTENDED = "qs_AddCrossingMarkings_extended"

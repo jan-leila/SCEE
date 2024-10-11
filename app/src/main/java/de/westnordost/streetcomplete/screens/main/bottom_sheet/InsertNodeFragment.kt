@@ -11,9 +11,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AnimationUtils
 import androidx.annotation.UiThread
+import androidx.core.graphics.Insets
 import androidx.core.graphics.toRectF
 import androidx.core.os.bundleOf
 import androidx.core.view.doOnLayout
+import androidx.core.view.isGone
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
@@ -38,10 +40,12 @@ import de.westnordost.streetcomplete.databinding.RowInsertNodeElementBinding
 import de.westnordost.streetcomplete.overlays.AbstractOverlayForm
 import de.westnordost.streetcomplete.screens.main.MainFragment
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
+import de.westnordost.streetcomplete.screens.main.map.Marker
 import de.westnordost.streetcomplete.screens.main.map.ShowsGeometryMarkers
-import de.westnordost.streetcomplete.screens.main.map.getPinIcon
+import de.westnordost.streetcomplete.screens.main.map.getIcon
 import de.westnordost.streetcomplete.screens.main.map.getTitle
-import de.westnordost.streetcomplete.util.getNameAndLocationLabel
+import de.westnordost.streetcomplete.screens.main.map.maplibre.toPadding
+import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
 import de.westnordost.streetcomplete.util.ktx.dpToPx
 import de.westnordost.streetcomplete.util.ktx.popIn
 import de.westnordost.streetcomplete.util.ktx.popOut
@@ -147,15 +151,16 @@ class InsertNodeFragment :
                 AnimationUtils.loadAnimation(context, R.anim.inflate_answer_bubble)
             )
         }
-        val offsetRect = Rect( // slightly lower position of marker than usual
+        val insets = Insets.of( // slightly lower position of marker than usual
             resources.getDimensionPixelSize(R.dimen.quest_form_leftOffset),
             resources.getDimensionPixelSize(R.dimen.quest_form_topOffset),
             resources.getDimensionPixelSize(R.dimen.quest_form_rightOffset),
             resources.getDimensionPixelSize(R.dimen.quest_form_bottomOffset) / 2
-        ).toRectF()
-        mapFragment?.getPositionThatCentersPosition(pos, offsetRect)
-            ?.let { mapFragment?.updateCameraPosition { position = it } }
-        mapFragment?.show3DBuildings = false
+        )
+        mapFragment?.updateCameraPosition(300) {
+            position = pos
+            padding = insets.toPadding()
+        }
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {
@@ -198,21 +203,23 @@ class InsertNodeFragment :
                 recentFeatureIds.add(feature.id)
                 prefs.putString(Prefs.INSERT_NODE_RECENT_FEATURE_IDS, recentFeatureIds.takeLast(25).joinToString("§"))
             }
-            showsGeometryMarkersListener?.putMarkerForCurrentHighlighting( // currently not done, but still need it
-                ElementPointGeometry(positionOnWay.position),
-                R.drawable.crosshair_marker,
-                null
+            showsGeometryMarkersListener?.putMarkersForCurrentHighlighting( // currently not done, but still need it
+                listOf(Marker(
+                    ElementPointGeometry(positionOnWay.position),
+                    R.drawable.crosshair_marker,
+                    null
+                ))
             )
             val mapData = mapDataSource.getMapDataWithGeometry(positionOnWay.position.enclosingBoundingBox(30.0))
             val nearbySimilarElements = mapData.filter { e -> feature.tags.all { e.tags[it.key] == it.value } }
-            nearbySimilarElements.forEach {
-                val geo = mapData.getGeometry(it.type, it.id) ?: return@forEach
-                showsGeometryMarkersListener?.putMarkerForCurrentHighlighting(
+            showsGeometryMarkersListener?.putMarkersForCurrentHighlighting(nearbySimilarElements.mapNotNull {
+                val geo = mapData.getGeometry(it.type, it.id) ?: return@mapNotNull null
+                Marker(
                     geo,
-                    getPinIcon(featureDictionary.value, it),
+                    getIcon(featureDictionary.value, it),
                     getTitle(it.tags)
                 )
-            }
+            })
         }
         val startTags = (positionOnWay as? VertexOfWay)?.let { mapData.getNode(it.nodeId) }?.tags ?: emptyMap()
         val f = InsertNodeTagEditor.create(positionOnWay, feature, startTags)
@@ -284,20 +291,20 @@ class InsertNodeFragment :
             if (vertex?.tags?.isNotEmpty() != true && ways.size > 1)
                 // highlight the way we show tags of
                 mapData.getWayGeometry(ways.first().id)?.let {
-                    showsGeometryMarkersListener?.putMarkerForCurrentHighlighting(it, null, null, Color.GREEN)
+                    showsGeometryMarkersListener?.putMarkersForCurrentHighlighting(listOf(Marker(it, null, null, Color.GREEN)))
                 }
             mapFragment?.highlightGeometries(ways.mapNotNull { mapData.getWayGeometry(it.id) })
-            ways.forEach { way ->
-                way.nodeIds.forEach {
-                    val node = mapData.getNode(it)!!
-                    if (node.tags.isNotEmpty())
-                        showsGeometryMarkersListener?.putMarkerForCurrentHighlighting(
-                            ElementPointGeometry(node.position),
-                            getPinIcon(featureDictionary.value, node),
-                            getTitle(node.tags)
-                        )
+            showsGeometryMarkersListener?.putMarkersForCurrentHighlighting(ways.flatMap { way ->
+                way.nodeIds.mapNotNull {
+                    val node = mapData.getNode(it) ?: return@mapNotNull null
+                    if (node.tags.isEmpty()) return@mapNotNull null
+                    Marker(
+                        ElementPointGeometry(node.position),
+                        getIcon(featureDictionary.value, node),
+                        getTitle(node.tags)
+                    )
                 }
-            }
+            })
         }
         animateButtonVisibilities()
     }
@@ -317,7 +324,7 @@ class InsertNodeFragment :
                 mapData.getGeometry(it.type, it.id)?.let { mapFragment?.deleteMarkerForCurrentHighlighting(it) }
             }
             if (element is Way) // highlighting nodes may remove other markers, e.g. for a crossing. so just don't
-                mapData.getGeometry(element.type, element.id)?.let { mapFragment?.putMarkerForCurrentHighlighting(it, null, null, Color.GREEN) }
+                mapData.getGeometry(element.type, element.id)?.let { mapFragment?.putMarkersForCurrentHighlighting(listOf(Marker(it, null, null, Color.GREEN))) }
         }
         val pow = positionOnWay
         if (pow is PositionOnWaysSegment && element is Way && pow.insertIntoWaysAt.size > 1) {
@@ -352,7 +359,7 @@ class InsertNodeFragment :
     }
 
     private fun getElementText(element: Element): CharSequence {
-        val title = getNameAndLocationLabel(element, resources, featureDictionary.value, false)
+        val title = getNameAndLocationSpanned(element, resources, featureDictionary.value, false)
         return title ?: "${element.type} ${element.id}"
     }
 

@@ -27,9 +27,6 @@ interface ExternalSourceQuestType : QuestType, ElementEditType {
     // like for OsmQuestType
     override val title: Int get() = getTitle(emptyMap())
     fun getTitle(tags: Map<String, String>): Int
-    // getTitleArgs must contain the necessary amount of placeholders for the title string!
-    // so override it if your title string contains %s, even if you replace the title in the form
-    fun getTitleArgs(tags: Map<String, String>): Array<String> = arrayOf()
     val highlightedElementsRadius: Double get() = 30.0
     fun getHighlightedElements(getMapData: () -> MapDataWithGeometry): Sequence<Element> = emptySequence()
     val enabledInCountries: Countries get() = AllCountries
@@ -44,7 +41,7 @@ interface ExternalSourceQuestType : QuestType, ElementEditType {
      *
      *  Download will only happen if [downloadEnabled] is true.
      */
-    fun download(bbox: BoundingBox): Collection<ExternalSourceQuest>
+    suspend fun download(bbox: BoundingBox): Collection<ExternalSourceQuest>
 
     /**
      *  Upload changes to the server. Uploaded quests should not be created again on [download].
@@ -52,7 +49,7 @@ interface ExternalSourceQuestType : QuestType, ElementEditType {
      *  uploading this edit, and [onSyncedEdit] will be called after, if there is a connected ElementEdit.
      *  [upload] is called only after all elementEdits.
      */
-    fun upload()
+    suspend fun upload()
 
     /** Return all quests inside the given [bbox]. This should be fast and not require internet access. */
     fun getQuests(bbox: BoundingBox): Collection<ExternalSourceQuest>

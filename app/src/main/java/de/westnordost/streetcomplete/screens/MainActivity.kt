@@ -23,8 +23,6 @@ import androidx.core.text.parseAsHtml
 import androidx.fragment.app.commit
 import androidx.lifecycle.lifecycleScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import androidx.preference.PreferenceManager
-import com.russhwolf.settings.ObservableSettings
 import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.AuthorizationException
@@ -35,9 +33,9 @@ import de.westnordost.streetcomplete.data.messages.Message
 import de.westnordost.streetcomplete.data.osm.edits.ElementEdit
 import de.westnordost.streetcomplete.data.osm.edits.ElementEditsSource
 import de.westnordost.streetcomplete.data.osm.mapdata.LatLon
-import de.westnordost.streetcomplete.data.osmnotes.ImageUploadServerException
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEdit
 import de.westnordost.streetcomplete.data.osmnotes.edits.NoteEditsSource
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.data.quest.QuestAutoSyncer
 import de.westnordost.streetcomplete.data.upload.UploadProgressSource
 import de.westnordost.streetcomplete.data.upload.VersionBannedException
@@ -50,8 +48,7 @@ import de.westnordost.streetcomplete.screens.main.messages.MessagesContainerFrag
 import de.westnordost.streetcomplete.screens.tutorial.OverlaysTutorialFragment
 import de.westnordost.streetcomplete.screens.tutorial.TutorialFragment
 import de.westnordost.streetcomplete.util.CrashReportExceptionHandler
-import de.westnordost.streetcomplete.util.ktx.hasLocationPermission
-import de.westnordost.streetcomplete.util.ktx.isLocationEnabled
+import de.westnordost.streetcomplete.util.ktx.isLocationAvailable
 import de.westnordost.streetcomplete.util.ktx.toast
 import de.westnordost.streetcomplete.util.location.LocationAvailabilityReceiver
 import de.westnordost.streetcomplete.util.location.LocationRequestFragment
@@ -79,7 +76,7 @@ class MainActivity :
     private val userLoginController: UserLoginController by inject()
     private val urlConfigController: UrlConfigController by inject()
     private val questPresetsSource: QuestPresetsSource by inject()
-    private val prefs: ObservableSettings by inject()
+    private val prefs: Preferences by inject()
 
     private var mainFragment: MainFragment? = null
     private var questMonitorJob: Job? = null
@@ -113,7 +110,6 @@ class MainActivity :
         )
 
         crashReportExceptionHandler.askUserToSendCrashReportIfExists(this)
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
         window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
@@ -124,8 +120,7 @@ class MainActivity :
         mainFragment = supportFragmentManager.findFragmentById(R.id.map_fragment) as MainFragment?
         if (savedInstanceState == null) {
             supportFragmentManager.commit { add(LocationRequestFragment(), TAG_LOCATION_REQUEST) }
-            val hasShownTutorial = prefs.getBoolean(Prefs.HAS_SHOWN_TUTORIAL, false)
-            if (!hasShownTutorial && !userLoginController.isLoggedIn) {
+            if (!prefs.hasShownTutorial && !userLoginController.isLoggedIn) {
                 supportFragmentManager.commit {
                     setCustomAnimations(R.anim.fade_in_from_bottom, R.anim.fade_out_to_bottom)
                     add(R.id.fragment_container, TutorialFragment())
@@ -171,7 +166,7 @@ class MainActivity :
         val data = intent.data ?: return
         if ("geo" != data.scheme) return
         val geo = parseGeoUri(data) ?: return
-        val zoom = if (geo.zoom == null || geo.zoom < 14) 18f else geo.zoom
+        val zoom = if (geo.zoom == null || geo.zoom < 14) 18.0 else geo.zoom
         val pos = LatLon(geo.latitude, geo.longitude)
         mainFragment?.setCameraPosition(pos, zoom)
     }
@@ -180,12 +175,11 @@ class MainActivity :
         super.onStart()
 
         updateScreenOn()
-
         uploadProgressSource.addListener(uploadProgressListener)
         downloadProgressSource.addListener(downloadProgressListener)
 
         locationAvailabilityReceiver.addListener(::updateLocationAvailability)
-        updateLocationAvailability(hasLocationPermission && isLocationEnabled)
+        updateLocationAvailability(isLocationAvailable)
 
         // try to stop quest monitor more often than it seems necessary, because sometime android
         // is slow to react, e.g. when quickly switching between SC and other app
@@ -224,13 +218,6 @@ class MainActivity :
             return true
         }
         return super.dispatchKeyEvent(event)
-    }
-
-    public override fun onPause() {
-        super.onPause()
-        val pos = mainFragment?.getCameraPosition()?.position ?: return
-        prefs.putDouble(Prefs.MAP_LATITUDE, pos.latitude)
-        prefs.putDouble(Prefs.MAP_LONGITUDE, pos.longitude)
     }
 
     public override fun onStop() {
@@ -278,10 +265,10 @@ class MainActivity :
         dontShowRequestAuthorizationAgain = true
     }
 
-    /* ------------------------------------- Preferences ---------------------------------------- */
+    /* ------------------------------- Preferences listeners ------------------------------------ */
 
     private fun updateScreenOn() {
-        if (prefs.getBoolean(Prefs.KEEP_SCREEN_ON, false)) {
+        if (prefs.keepScreenOn) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -311,7 +298,7 @@ class MainActivity :
                         messageView.movementMethod = LinkMovementMethod.getInstance()
                         Linkify.addLinks(messageView, Linkify.WEB_URLS)
                     }
-                } else if (e is ConnectionException || e is ImageUploadServerException) {
+                } else if (e is ConnectionException) {
                     /* A network connection error or server error is not the fault of this app.
                        Nothing we can do about it, so it does not make sense to send an error
                        report. Just notify the user. */
@@ -369,7 +356,7 @@ class MainActivity :
     override fun onTutorialFinished() {
         requestLocation()
 
-        prefs.putBoolean(Prefs.HAS_SHOWN_TUTORIAL, true)
+        prefs.hasShownTutorial = true
         removeTutorialFragment()
     }
 
@@ -399,7 +386,7 @@ class MainActivity :
     /* --------------------------- OverlaysTutorialFragment.Listener ---------------------------- */
 
     override fun onOverlaysTutorialFinished() {
-        prefs.putBoolean(Prefs.HAS_SHOWN_OVERLAYS_TUTORIAL, true)
+        prefs.hasShownOverlaysTutorial = true
         removeTutorialFragment()
     }
 

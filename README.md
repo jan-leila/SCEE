@@ -22,7 +22,7 @@ Functionality added in SCEE is considerably less tested than what you might be u
 
 F-Droid releases of SCEE make use of reproducible builds, so releases on F-Droid and GitHub are signed with the same keys. This means you can switch between GitHub and F-Droid releases anytime without needing to uninstall first.
 
-__F-Droid anti-feature__ _non-free network_: SCEE uses map tiles provided by [jawg](https://www.jawg.io), and optionally [aerial / satellite imagery](https://server.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer) by [Esri](https://www.esri.com).
+__F-Droid anti-feature__ _non-free network_: SCEE uses map tiles provided by [jawg](https://www.jawg.io), and optionally [aerial / satellite imagery](https://server.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer) by [Esri](https://www.esri.com) .
 
 ## Translations
 Translations for strings added in SCEE can be done [using Weblate](https://translate.codeberg.org/projects/scee/).
@@ -51,8 +51,7 @@ SCEE asks for two more permissions than StreetComplete: `ACCESS_BACKGROUND_LOCAT
   * Highlight obstacles along the way for smoothness quests
   * Open settings when pressing menu key in main menu dialog
   * Allow switching to aerial view while adding or moving a node
-  * Some potential performance improvements
-* New quests that are not eligible for StreetComplete, usually because some answers cannot be tagged, or because not everyone has the required knowledge to answer the quest
+* New quests that are not eligible for StreetComplete, usually because some answers cannot be tagged, or because not everyone has the required knowledge to answer the quest. These quests can only be enabled when expert mode is on.
   * Material of benches and picnic tables
   * Phone number and website
   * Cuisine
@@ -89,9 +88,7 @@ SCEE asks for two more permissions than StreetComplete: `ACCESS_BACKGROUND_LOCAT
 * Settings
   * Additional darker dark theme
   * Background map can be changed to aerial / satellite imagery
-  * Separate deletion of quest and map tile cache
   * Adjust location update intervals
-  * Log reader (not a setting, but it's in the menu)
   * Expert mode that enables capabilities, some of which can be dangerous when used by inexperienced OSM contributors
     * Directly edit tags, with suggestions from iD and last used values
     * Add nodes everywhere, either free-floating or as part of a way
@@ -126,10 +123,9 @@ SCEE asks for two more permissions than StreetComplete: `ACCESS_BACKGROUND_LOCAT
     * Capitalize words when entering names
     * Zoom using volume buttons
   * Display settings
-    * Disable 3D buildings (currently broken)
+    * Disable 3D buildings (currently not available, as 3D buildings are disabled in general with since the MapLibre switch)
     * Show arrows indicating direction of highlighted way
     * Highlight geometries for nearby quests
-    * Put pin on exact location of a quest
     * Disable quest solved animation
     * Provide GPX track and have it always shown on the map
   * Quest settings
@@ -151,7 +147,6 @@ SCEE asks for two more permissions than StreetComplete: `ACCESS_BACKGROUND_LOCAT
     * Disable always downloading map data on manual download, even if data is fresh
     * Choose tile URL for aerial imagery
     * Set data retention time
-    * Store map tiles on SD card
     * Disable local statistics updates (hides achievement messages)
     * Import / export
       * Custom overlays

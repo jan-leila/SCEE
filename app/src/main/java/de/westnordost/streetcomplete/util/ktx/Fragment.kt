@@ -18,6 +18,16 @@ val Fragment.childFragmentManagerOrNull: FragmentManager? get() =
 
 val Fragment.viewLifecycleScope get() = viewLifecycleOwner.lifecycleScope
 
+fun <T> Fragment.observe(flow: SharedFlow<T>, collector: FlowCollector<T>) {
+    viewLifecycleOwner.lifecycleScope.launch {
+        repeatOnLifecycle(Lifecycle.State.STARTED) {
+            flow.collect {
+                collector.emit(it)
+            }
+        }
+    }
+}
+
 fun Fragment.setUpToolbarTitleAndIcon(toolbar: Toolbar) {
     if (this is HasTitle) {
         toolbar.title = title
@@ -35,14 +45,4 @@ fun Fragment.setUpToolbarTitleAndIcon(toolbar: Toolbar) {
     }
 
     toolbar.navigationIcon = backIcon
-}
-
-fun <T> Fragment.observe(flow: SharedFlow<T>, collector: FlowCollector<T>) {
-    viewLifecycleOwner.lifecycleScope.launch {
-        repeatOnLifecycle(Lifecycle.State.STARTED) {
-            flow.collect {
-                collector.emit(it)
-            }
-        }
-    }
 }

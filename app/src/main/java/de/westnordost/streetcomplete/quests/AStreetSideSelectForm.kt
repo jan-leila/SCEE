@@ -2,10 +2,9 @@ package de.westnordost.streetcomplete.quests
 
 import android.os.Bundle
 import android.view.View
-import com.russhwolf.settings.ObservableSettings
-import de.westnordost.streetcomplete.Prefs
 import de.westnordost.streetcomplete.R
 import de.westnordost.streetcomplete.data.osm.geometry.ElementPolylinesGeometry
+import de.westnordost.streetcomplete.data.preferences.Preferences
 import de.westnordost.streetcomplete.databinding.QuestStreetSidePuzzleWithLastAnswerButtonBinding
 import de.westnordost.streetcomplete.util.math.getOrientationAtCenterLineInDegrees
 import de.westnordost.streetcomplete.view.ResImage
@@ -38,7 +37,7 @@ abstract class AStreetSideSelectForm<I, T> : AbstractOsmQuestForm<T>() {
             binding.littleCompass.root,
             binding.lastAnswerButton,
             prefs,
-            Prefs.LAST_PICKED_PREFIX + javaClass.simpleName,
+            javaClass.simpleName,
             ::serialize,
             ::deserialize,
             ::asStreetSideItem
@@ -65,7 +64,7 @@ abstract class AStreetSideSelectForm<I, T> : AbstractOsmQuestForm<T>() {
         checkIsFormComplete()
     }
 
-    override fun onMapOrientation(rotation: Float, tilt: Float) {
+    override fun onMapOrientation(rotation: Double, tilt: Double) {
         streetSideSelect.onMapOrientation(rotation, tilt)
     }
 

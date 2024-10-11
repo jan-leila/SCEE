@@ -52,7 +52,7 @@ import de.westnordost.streetcomplete.quests.max_weight.getLayoutResourceId
 import de.westnordost.streetcomplete.quests.max_weight.osmKey
 import de.westnordost.streetcomplete.screens.main.MainFragment
 import de.westnordost.streetcomplete.screens.main.map.MainMapFragment
-import de.westnordost.streetcomplete.util.getNameAndLocationLabel
+import de.westnordost.streetcomplete.screens.main.map.Marker
 import de.westnordost.streetcomplete.util.ktx.containsAny
 import de.westnordost.streetcomplete.util.ktx.createBitmap
 import de.westnordost.streetcomplete.util.ktx.dpToPx
@@ -64,6 +64,7 @@ import de.westnordost.streetcomplete.util.math.enclosingBoundingBox
 import de.westnordost.streetcomplete.util.math.finalBearingTo
 import de.westnordost.streetcomplete.util.dialogs.showAddConditionalDialog
 import de.westnordost.streetcomplete.util.dialogs.showOtherConditionalDialog
+import de.westnordost.streetcomplete.util.getNameAndLocationSpanned
 import de.westnordost.streetcomplete.view.ArrayImageAdapter
 import de.westnordost.streetcomplete.view.DrawableImage
 import de.westnordost.streetcomplete.view.ResImage
@@ -155,7 +156,7 @@ class RestrictionOverlayWayForm : AbstractOverlayForm() {
             field = value
             val tags = (currentRestriction as? TurnRestriction)?.relation?.tags ?: emptyMap()
             val icon = getIconForTurnRestriction(tags.getShortRestrictionValue() ?: "")
-            value?.let { mapFragment?.putMarkerForCurrentHighlighting(ElementPointGeometry(it.first), icon, null, null, it.second) }
+            value?.let { mapFragment?.putMarkersForCurrentHighlighting(listOf(Marker(ElementPointGeometry(it.first), icon, null, null, it.second))) }
         }
 
     // enabled when adding turn restriction, cannot be disabled
@@ -265,7 +266,7 @@ class RestrictionOverlayWayForm : AbstractOverlayForm() {
     override fun isFormComplete(): Boolean {
         val restriction = currentRestriction ?: return false
         if (!hasChanges()) return false
-        if (restriction is WeightRestriction && restriction.weight.isBlank()) return false
+        if (restriction is WeightRestriction && restriction.weight.replace(',', '.').toDoubleOrNull() == null) return false
         return true
     }
 
@@ -273,7 +274,7 @@ class RestrictionOverlayWayForm : AbstractOverlayForm() {
         val restriction = currentRestriction ?: return
         when (restriction) {
             is WeightRestriction -> {
-                val input = restriction.weight.toDouble()
+                val input = restriction.weight.replace(',', '.').toDouble()
                 val weight = when (countryInfo.weightLimitUnits[weightUnitSelect?.selectedItemPosition ?: 0]) {
                     WeightMeasurementUnit.SHORT_TON  -> ShortTons(input)
                     WeightMeasurementUnit.POUND      -> ImperialPounds(input.toInt())
@@ -340,7 +341,7 @@ class RestrictionOverlayWayForm : AbstractOverlayForm() {
             when (it.value) {
                 RestrictionType.TURN -> turnRestrictionSelectionMode = true
                 RestrictionType.WEIGHT -> {
-                    val items = MaxWeightSign.values().mapNotNull { sign ->
+                    val items = MaxWeightSign.entries.mapNotNull { sign ->
                         if (originalRestrictions.any { it is WeightRestriction && it.sign == sign })
                                 null
                             else sign.asItem(layoutInflater, countryInfo.countryCode)
@@ -679,7 +680,7 @@ class RestrictionOverlayWayForm : AbstractOverlayForm() {
         val tagsText = tags.entries.sortedBy { it.key }.joinToString("\n") { "${it.key} = ${it.value}" }
         val membersText = members.joinToString("\n") { member ->
             val element = mapDataSource.get(member.type, member.ref)!!
-            val memberDetails = getNameAndLocationLabel(element, resources, featureDictionary, false)
+            val memberDetails = getNameAndLocationSpanned(element, resources, featureDictionary, false)
                 ?.let { "${element.key}: $it" } ?: element.key.toString()
             "${member.role}: $memberDetails"
         }
@@ -746,7 +747,7 @@ private enum class RestrictionType { TURN, WEIGHT }
 
 private fun getWeightRestrictions(way: Way): List<WeightRestriction> {
     val restrictions = mutableListOf<WeightRestriction>()
-    for (sign in MaxWeightSign.values()) {
+    for (sign in MaxWeightSign.entries) {
         val key = if (way.tags.containsKey(sign.osmKey)) sign.osmKey
             else way.tags.keys.firstOrNull { it == "${sign.osmKey}:conditional" } ?: continue
         val weight = way.tags[key]!!

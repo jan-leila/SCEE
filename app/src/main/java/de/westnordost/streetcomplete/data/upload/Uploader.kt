@@ -15,10 +15,8 @@ import de.westnordost.streetcomplete.data.user.UserLoginSource
 import de.westnordost.streetcomplete.util.Listeners
 import de.westnordost.streetcomplete.util.logs.Log
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 
 class Uploader(
     private val noteEditsUploader: NoteEditsUploader,
@@ -60,7 +58,7 @@ class Uploader(
             listeners.forEach { it.onStarted() }
 
             if (!::bannedInfo.isInitialized) {
-                bannedInfo = withContext(Dispatchers.IO) { versionIsBannedChecker.get() }
+                bannedInfo = versionIsBannedChecker.get()
             }
             val banned = bannedInfo
             if (banned is IsBanned) {

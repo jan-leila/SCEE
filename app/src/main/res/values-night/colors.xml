@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="primary">#ff222222</color>
+
     <color name="accent">#ff6600</color>
     <color name="accent_variant">#F44336</color>
 
@@ -20,13 +22,6 @@
     <color name="matched_search_text">#6fff</color>
 
     <color name="smoothness_vehicle_tyre">#70808b</color>
-
-    <!-- use lighter tones (200) for increased contrast with dark background -->
-    <color name="log_verbose">#999</color>
-    <color name="log_debug">#90caf9</color>
-    <color name="log_info">#a5d6a7</color>
-    <color name="log_warning">#ffcc80</color>
-    <color name="log_error">#ef9a9a</color>
 
     <!-- for fading out images -->
     <color name="fade_out">#303030</color>
